@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wallets — NexVault</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+</head>
+<body class="app-body">
+<div class="aurora"></div>
+<canvas id="particleCanvas"></canvas>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
+    <a href="wallet.html" class="nav-item active"><span>&#128179;</span> Wallets</a>
+    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
+    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
+    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
+    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
+  </div>
+</aside>
+
+<main class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+      <h1 class="page-title">Wallets</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-primary btn-sm" onclick="openModal('walletModal')">+ Add Wallet</button>
+    </div>
+  </header>
+
+  <!-- WALLET STATS -->
+  <section class="kpi-grid">
+    <div class="kpi-card reveal"><div class="kpi-label">Total Balance</div><div class="kpi-value">$284,719.40</div><div class="kpi-change positive">+4.82%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Wallets</div><div class="kpi-value">3</div><div class="kpi-change">Active</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Chains</div><div class="kpi-value">5</div><div class="kpi-change">ETH, SOL, BNB, ARB, MATIC</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">NFTs</div><div class="kpi-value">9</div><div class="kpi-change">Across 3 collections</div></div>
+  </section>
+
+  <!-- WALLET CARDS -->
+  <section class="wallet-cards-grid">
+
+    <!-- MetaMask -->
+    <div class="wallet-detail-card tilt-card reveal">
+      <div class="wdc-header">
+        <div class="wdc-icon">&#129418;</div>
+        <div class="wdc-info">
+          <h3>MetaMask</h3>
+          <span class="badge badge-success">Active</span>
+        </div>
+        <div class="wdc-actions">
+          <button class="btn btn-outline btn-xs" onclick="copyAddr('0x1a2b...3c4d')">Copy</button>
+          <button class="btn btn-danger btn-xs">Disconnect</button>
+        </div>
+      </div>
+      <div class="wdc-address">0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b</div>
+      <div class="wdc-balance">$198,442.00</div>
+      <div class="wdc-holdings">
+        <div class="wdc-holding-row"><span>ETH</span><span>42.5</span><span>$136,446</span></div>
+        <div class="wdc-holding-row"><span>WBTC</span><span>0.32</span><span>$21,574</span></div>
+        <div class="wdc-holding-row"><span>USDC</span><span>25,846</span><span>$25,846</span></div>
+        <div class="wdc-holding-row"><span>LINK</span><span>840</span><span>$14,576</span></div>
+      </div>
+      <div class="wdc-chain-dist">
+        <div class="chain-dist-label"><span>Ethereum</span><span>95.2%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:95.2%"></div></div>
+        <div class="chain-dist-label"><span>Arbitrum</span><span>4.8%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:4.8%"></div></div>
+      </div>
+    </div>
+
+    <!-- Phantom -->
+    <div class="wallet-detail-card tilt-card reveal">
+      <div class="wdc-header">
+        <div class="wdc-icon">&#128123;</div>
+        <div class="wdc-info">
+          <h3>Phantom</h3>
+          <span class="badge badge-info">Synced</span>
+        </div>
+        <div class="wdc-actions">
+          <button class="btn btn-outline btn-xs" onclick="copyAddr('7xKp...mN2q')">Copy</button>
+          <button class="btn btn-danger btn-xs">Disconnect</button>
+        </div>
+      </div>
+      <div class="wdc-address">7xKpQmN2qR9sT3uV4wX5yZ6aB7cD8eF9gH0iJ1kL2m</div>
+      <div class="wdc-balance">$47,661.00</div>
+      <div class="wdc-holdings">
+        <div class="wdc-holding-row"><span>SOL</span><span>210</span><span>$38,283</span></div>
+        <div class="wdc-holding-row"><span>JTO</span><span>2,100</span><span>$9,378</span></div>
+      </div>
+      <div class="wdc-chain-dist">
+        <div class="chain-dist-label"><span>Solana</span><span>100%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+      </div>
+    </div>
+
+    <!-- Ledger -->
+    <div class="wallet-detail-card tilt-card reveal">
+      <div class="wdc-header">
+        <div class="wdc-icon">&#128274;</div>
+        <div class="wdc-info">
+          <h3>Ledger Hardware</h3>
+          <span class="badge badge-warning">Cold</span>
+        </div>
+        <div class="wdc-actions">
+          <button class="btn btn-outline btn-xs" onclick="copyAddr('0x9f8e...7d6c')">Copy</button>
+          <button class="btn btn-danger btn-xs">Remove</button>
+        </div>
+      </div>
+      <div class="wdc-address">0x9f8e7d6c5b4a39281726354433221100ffeeddcc</div>
+      <div class="wdc-balance">$38,616.40</div>
+      <div class="wdc-holdings">
+        <div class="wdc-holding-row"><span>BTC</span><span>0.52</span><span>$35,058</span></div>
+        <div class="wdc-holding-row"><span>ETH</span><span>1.0</span><span>$3,210</span></div>
+        <div class="wdc-holding-row"><span>AVAX</span><span>10</span><span>$348</span></div>
+      </div>
+      <div class="wdc-chain-dist">
+        <div class="chain-dist-label"><span>Bitcoin</span><span>90.8%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:90.8%"></div></div>
+        <div class="chain-dist-label"><span>Ethereum</span><span>8.3%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:8.3%"></div></div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<nav class="mobile-nav">
+  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
+  <a href="wallet.html" class="mobile-nav-item active">&#128179;</a>
+  <a href="tokens.html" class="mobile-nav-item">&#128176;</a>
+  <a href="nft.html" class="mobile-nav-item">&#128444;</a>
+  <a href="analytics.html" class="mobile-nav-item">&#128202;</a>
+</nav>
+
+<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
+    <div class="wallet-grid" id="walletGrid"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
+<script src="assets/js/animations.js"></script>
+<script src="assets/js/wallet.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles('particleCanvas');
+  initTilt();
+  initScrollReveal();
+});
+function copyAddr(addr) {
+  navigator.clipboard.writeText(addr);
+  showToast('Address copied!', 'success');
+}
+</script>
+</body>
+</html>
