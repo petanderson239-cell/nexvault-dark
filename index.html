@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexVault — Multi-Chain Crypto Portfolio</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+  <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- AURORA BACKGROUND -->
+<div class="aurora"></div>
+<canvas id="particleCanvas"></canvas>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">
+      <span class="logo-icon">&#9679;</span>
+      <span class="logo-text">NexVault</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#chains">Chains</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+    <button class="btn btn-primary" onclick="openModal('walletModal')">Connect Wallet</button>
+    <button class="nav-toggle" onclick="toggleMobileNav()">&#9776;</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-content">
+    <div class="hero-badge">Multi-Chain Portfolio Tracker</div>
+    <h1 class="hero-title">
+      Track Every Asset.<br/>
+      <span class="gradient-text">Across Every Chain.</span>
+    </h1>
+    <p class="hero-subtitle">NexVault unifies your crypto portfolio across 50+ blockchains. Real-time prices, NFT gallery, DeFi positions — all in one dark dashboard.</p>
+    <div class="hero-cta">
+      <a href="dashboard.html" class="btn btn-primary btn-lg">Open Dashboard</a>
+      <button class="btn btn-outline btn-lg" onclick="openModal('walletModal')">Connect Wallet</button>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-card tilt-card">
+      <div class="hero-card-header">
+        <span class="text-muted">Total Portfolio</span>
+        <span class="badge badge-success">+4.82%</span>
+      </div>
+      <div class="hero-card-value">$284,719.40</div>
+      <div class="hero-card-sub">Across 3 wallets &bull; 12 chains</div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<section class="stats-bar">
+  <div class="stat-item"><span class="stat-num" data-target="284719">$0</span><span class="stat-label">Total Tracked</span></div>
+  <div class="stat-item"><span class="stat-num">50+</span><span class="stat-label">Chains Supported</span></div>
+  <div class="stat-item"><span class="stat-num">99.9%</span><span class="stat-label">Uptime</span></div>
+  <div class="stat-item"><span class="stat-num">10K+</span><span class="stat-label">Wallets Connected</span></div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div class="section-header">
+    <h2>Everything You Need</h2>
+    <p>Built for serious crypto holders</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card tilt-card reveal">
+      <div class="feature-icon">&#128200;</div>
+      <h3>Live Portfolio Tracking</h3>
+      <p>Real-time prices across all major chains. Charts, PnL, allocation — always up to date.</p>
+    </div>
+    <div class="feature-card tilt-card reveal">
+      <div class="feature-icon">&#128444;</div>
+      <h3>NFT Gallery</h3>
+      <p>View all your NFTs from Ethereum, Solana, Polygon in one beautiful gallery.</p>
+    </div>
+    <div class="feature-card tilt-card reveal">
+      <div class="feature-icon">&#128274;</div>
+      <h3>Non-Custodial</h3>
+      <p>We never hold your keys. Read-only wallet connect — your assets stay yours.</p>
+    </div>
+    <div class="feature-card tilt-card reveal">
+      <div class="feature-icon">&#9889;</div>
+      <h3>Gas Tracker</h3>
+      <p>Live gas price monitor for ETH, BNB, Polygon. Never overpay again.</p>
+    </div>
+    <div class="feature-card tilt-card reveal">
+      <div class="feature-icon">&#128257;</div>
+      <h3>TX History</h3>
+      <p>Full transaction history across all wallets. Filter, search, export CSV.</p>
+    </div>
+    <div class="feature-card tilt-card reveal">
+      <div class="feature-icon">&#128202;</div>
+      <h3>Advanced Analytics</h3>
+      <p>PnL charts, allocation breakdown, chain distribution — deep portfolio insights.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CHAINS -->
+<section class="chains-section" id="chains">
+  <div class="section-header">
+    <h2>50+ Chains Supported</h2>
+    <p>All major blockchains, one dashboard</p>
+  </div>
+  <div class="chains-strip">
+    <div class="chain-chip">Ethereum</div>
+    <div class="chain-chip">Bitcoin</div>
+    <div class="chain-chip">Solana</div>
+    <div class="chain-chip">Polygon</div>
+    <div class="chain-chip">BNB Chain</div>
+    <div class="chain-chip">Arbitrum</div>
+    <div class="chain-chip">Optimism</div>
+    <div class="chain-chip">Avalanche</div>
+    <div class="chain-chip">Fantom</div>
+    <div class="chain-chip">Cosmos</div>
+    <div class="chain-chip">Near</div>
+    <div class="chain-chip">Aptos</div>
+    <div class="chain-chip">Sui</div>
+    <div class="chain-chip">Tron</div>
+    <div class="chain-chip">zkSync</div>
+    <div class="chain-chip">Starknet</div>
+    <div class="chain-chip">Base</div>
+    <div class="chain-chip">Linea</div>
+    <div class="chain-chip">Scroll</div>
+    <div class="chain-chip">Mantle</div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section class="security-section" id="security">
+  <div class="section-header">
+    <h2>Bank-Grade Security</h2>
+    <p>Your keys, your crypto — always</p>
+  </div>
+  <div class="security-grid">
+    <div class="security-card reveal">
+      <div class="security-icon">&#128274;</div>
+      <h4>Non-Custodial</h4>
+      <p>We never access or store your private keys</p>
+    </div>
+    <div class="security-card reveal">
+      <div class="security-icon">&#128065;</div>
+      <h4>Read-Only Access</h4>
+      <p>View-only wallet connection, no transaction signing</p>
+    </div>
+    <div class="security-card reveal">
+      <div class="security-icon">&#128272;</div>
+      <h4>End-to-End Encrypted</h4>
+      <p>All data encrypted in transit and at rest</p>
+    </div>
+    <div class="security-card reveal">
+      <div class="security-icon">&#9989;</div>
+      <h4>Open Source</h4>
+      <p>Fully auditable codebase on GitHub</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Ready to Track Your Portfolio?</h2>
+  <p>Connect your wallet and get started in seconds.</p>
+  <a href="dashboard.html" class="btn btn-primary btn-lg">Open Dashboard &rarr;</a>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-brand">
+      <span class="logo-text">NexVault</span>
+      <p>Multi-chain crypto portfolio tracker</p>
+    </div>
+    <div class="footer-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="tokens.html">Tokens</a>
+      <a href="nft.html">NFTs</a>
+      <a href="transactions.html">Transactions</a>
+      <a href="analytics.html">Analytics</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2025 NexVault. Non-custodial. Open-source.</p>
+  </div>
+</footer>
+
+<!-- WALLET MODAL -->
+<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Connect Wallet</h3>
+      <button class="modal-close" onclick="closeModal('walletModal')">&times;</button>
+    </div>
+    <div class="wallet-grid" id="walletGrid"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
+<script src="assets/js/animations.js"></script>
+<script src="assets/js/wallet.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  // Init landing page
+  document.addEventListener('DOMContentLoaded', () => {
+    initParticles('particleCanvas');
+    initTilt();
+    initScrollReveal();
+    initMouseGlow();
+    // Animate stat numbers
+    document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+      countUp(el, parseInt(el.dataset.target));
+    });
+    // Populate wallet grid
+    const grid = document.getElementById('walletGrid');
+    if (grid && window.NEXVAULT_CONFIG) {
+      NEXVAULT_CONFIG.SUPPORTED_WALLETS.forEach(w => {
+        grid.innerHTML += `<div class="wallet-option" onclick="WalletManager.connect('${w.id}')">
+          <span class="wallet-name">${w.name}</span>
+        </div>`;
+      });
+    }
+  });
+  function toggleMobileNav() {
+    document.querySelector('.nav-links').classList.toggle('open');
+  }
+</script>
+</body>
+</html>
