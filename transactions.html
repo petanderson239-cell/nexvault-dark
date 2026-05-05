@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transactions — NexVault</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+</head>
+<body class="app-body">
+<div class="aurora"></div>
+<canvas id="particleCanvas"></canvas>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
+    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
+    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
+    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
+    <a href="transactions.html" class="nav-item active"><span>&#128257;</span> Transactions</a>
+    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
+  </div>
+</aside>
+
+<main class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+      <h1 class="page-title">Transactions</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-outline btn-sm" onclick="exportTxCSV()">Export CSV</button>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <section class="kpi-grid">
+    <div class="kpi-card reveal"><div class="kpi-label">Total TXs</div><div class="kpi-value">15</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Total In</div><div class="kpi-value positive">+$9,698</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Total Out</div><div class="kpi-value negative">-$7,190</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Gas Spent</div><div class="kpi-value">$84.20</div></div>
+  </section>
+
+  <!-- FILTERS -->
+  <section class="filter-bar">
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterTx('all', this)">All</button>
+      <button class="filter-tab" onclick="filterTx('receive', this)">Received</button>
+      <button class="filter-tab" onclick="filterTx('send', this)">Sent</button>
+      <button class="filter-tab" onclick="filterTx('swap', this)">Swaps</button>
+      <button class="filter-tab" onclick="filterTx('mint', this)">Mints</button>
+    </div>
+    <select class="search-input" style="max-width:160px" onchange="filterChainTx(this.value)">
+      <option value="all">All Chains</option>
+      <option value="ethereum">Ethereum</option>
+      <option value="solana">Solana</option>
+      <option value="polygon">Polygon</option>
+      <option value="arbitrum">Arbitrum</option>
+    </select>
+    <input type="text" class="search-input" placeholder="Search TX..." oninput="searchTx(this.value)" />
+  </section>
+
+  <!-- TX TABLE -->
+  <section class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr><th>Type</th><th>Asset</th><th>Amount</th><th>Value</th><th>Chain</th><th>From/To</th><th>Time</th><th>Hash</th></tr>
+      </thead>
+      <tbody id="txTbody"></tbody>
+    </table>
+  </section>
+
+  <!-- PAGINATION -->
+  <div class="pagination">
+    <button class="btn btn-outline btn-sm">&laquo; Prev</button>
+    <span class="page-info">Page 1 of 2</span>
+    <button class="btn btn-outline btn-sm">Next &raquo;</button>
+  </div>
+</main>
+
+<!-- TX DETAIL MODAL -->
+<div class="modal-overlay" id="txModal" onclick="closeModal('txModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Transaction Detail</h3><button class="modal-close" onclick="closeModal('txModal')">&times;</button></div>
+    <div id="txModalBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
+    <div class="wallet-grid" id="walletGrid"></div>
+  </div>
+</div>
+
+<nav class="mobile-nav">
+  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
+  <a href="wallet.html" class="mobile-nav-item">&#128179;</a>
+  <a href="tokens.html" class="mobile-nav-item">&#128176;</a>
+  <a href="nft.html" class="mobile-nav-item">&#128444;</a>
+  <a href="analytics.html" class="mobile-nav-item">&#128202;</a>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
+<script src="assets/js/animations.js"></script>
+<script src="assets/js/wallet.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+const TXS = [
+  {id:1,type:'receive',asset:'ETH',amount:'+2.5 ETH',value:'+$8,026',chain:'ethereum',addr:'0x1a2b...3c4d',time:'2h ago',hash:'0xabc123...'},
+  {id:2,type:'send',asset:'USDC',amount:'-500 USDC',value:'-$500',chain:'ethereum',addr:'0x9f8e...7d6c',time:'5h ago',hash:'0xdef456...'},
+  {id:3,type:'swap',asset:'ETH→USDC',amount:'1.0 ETH',value:'$3,210',chain:'ethereum',addr:'Uniswap V3',time:'1d ago',hash:'0xghi789...'},
+  {id:4,type:'receive',asset:'SOL',amount:'+10 SOL',value:'+$1,823',chain:'solana',addr:'7xKp...mN2q',time:'2d ago',hash:'5xjk...'},
+  {id:5,type:'mint',asset:'BAYC',amount:'1 NFT',value:'$124,000',chain:'ethereum',addr:'BAYC Contract',time:'3d ago',hash:'0xmno...'},
+  {id:6,type:'send',asset:'ETH',amount:'-0.5 ETH',value:'-$1,605',chain:'ethereum',addr:'0x4f5e...6d7c',time:'4d ago',hash:'0xpqr...'},
+  {id:7,type:'swap',asset:'SOL→JTO',amount:'5 SOL',value:'$911',chain:'solana',addr:'Jupiter',time:'5d ago',hash:'8ylo...'},
+  {id:8,type:'receive',asset:'ARB',amount:'+2,400 ARB',value:'+$2,976',chain:'arbitrum',addr:'0x2b3c...4d5e',time:'6d ago',hash:'0xstu...'},
+  {id:9,type:'send',asset:'USDC',amount:'-1,000 USDC',value:'-$1,000',chain:'polygon',addr:'0x7c8d...9e0f',time:'7d ago',hash:'0xvwx...'},
+  {id:10,type:'swap',asset:'MATIC→ETH',amount:'5,000 MATIC',value:'$4,100',chain:'polygon',addr:'QuickSwap',time:'8d ago',hash:'0xyza...'},
+  {id:11,type:'receive',asset:'BTC',amount:'+0.02 BTC',value:'+$1,348',chain:'ethereum',addr:'0x3c4d...5e6f',time:'9d ago',hash:'0xbcd...'},
+  {id:12,type:'mint',asset:'CloneX',amount:'1 NFT',value:'$11,220',chain:'ethereum',addr:'CloneX Contract',time:'10d ago',hash:'0xefg...'},
+  {id:13,type:'send',asset:'SOL',amount:'-2 SOL',value:'-$365',chain:'solana',addr:'Bx9m...pQ2r',time:'11d ago',hash:'9kbm...'},
+  {id:14,type:'receive',asset:'JTO',amount:'+2,100 JTO',value:'+$9,387',chain:'solana',addr:'7xKp...mN2q',time:'12d ago',hash:'3rtg...'},
+  {id:15,type:'swap',asset:'ETH→WBTC',amount:'2.0 ETH',value:'$6,421',chain:'ethereum',addr:'1inch',time:'14d ago',hash:'0xhij...'},
+];
+
+let filteredTx = [...TXS];
+let chainFilter = 'all';
+
+const typeColors = {receive:'badge-success', send:'badge-danger', swap:'badge-info', mint:'badge-warning'};
+
+function renderTx(data) {
+  document.getElementById('txTbody').innerHTML = data.map(tx => `
+    <tr onclick="openTx(${tx.id})" style="cursor:pointer">
+      <td><span class="badge ${typeColors[tx.type]}">${tx.type}</span></td>
+      <td>${tx.asset}</td>
+      <td class="${tx.type==='receive'?'positive':tx.type==='send'?'negative':''}">${tx.amount}</td>
+      <td>${tx.value}</td>
+      <td><span class="badge badge-info">${tx.chain}</span></td>
+      <td class="text-muted" style="font-size:0.75rem">${tx.addr}</td>
+      <td class="text-muted">${tx.time}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();copyHash('${tx.hash}')">Copy</button></td>
+    </tr>
+  `).join('');
+}
+
+function openTx(id) {
+  const tx = TXS.find(t => t.id === id);
+  document.getElementById('txModalBody').innerHTML = `
+    <div class="tx-detail">
+      <div class="nft-detail-row"><span>Type</span><span class="badge ${typeColors[tx.type]}">${tx.type}</span></div>
+      <div class="nft-detail-row"><span>Asset</span><span>${tx.asset}</span></div>
+      <div class="nft-detail-row"><span>Amount</span><span>${tx.amount}</span></div>
+      <div class="nft-detail-row"><span>Value</span><span>${tx.value}</span></div>
+      <div class="nft-detail-row"><span>Chain</span><span>${tx.chain}</span></div>
+      <div class="nft-detail-row"><span>From/To</span><span>${tx.addr}</span></div>
+      <div class="nft-detail-row"><span>Time</span><span>${tx.time}</span></div>
+      <div class="nft-detail-row"><span>TX Hash</span><span style="font-size:0.75rem">${tx.hash} <button class="btn btn-outline btn-xs" onclick="copyHash('${tx.hash}')">Copy</button></span></div>
+    </div>
+  `;
+  openModal('txModal');
+}
+
+function filterTx(type, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filteredTx = type === 'all' ? [...TXS] : TXS.filter(t => t.type === type);
+  renderTx(filteredTx);
+}
+
+function filterChainTx(chain) {
+  chainFilter = chain;
+  renderTx(chain === 'all' ? filteredTx : filteredTx.filter(t => t.chain === chain));
+}
+
+function searchTx(val) {
+  const f = val.toLowerCase();
+  renderTx(filteredTx.filter(t => t.asset.toLowerCase().includes(f) || t.hash.toLowerCase().includes(f) || t.addr.toLowerCase().includes(f)));
+}
+
+function copyHash(hash) {
+  navigator.clipboard.writeText(hash);
+  showToast('TX Hash copied!', 'success');
+}
+
+function exportTxCSV() {
+  const rows = [['Type','Asset','Amount','Value','Chain','Address','Time','Hash']];
+  TXS.forEach(t => rows.push([t.type, t.asset, t.amount, t.value, t.chain, t.addr, t.time, t.hash]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'transactions.csv';
+  a.click();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles('particleCanvas');
+  initScrollReveal();
+  renderTx(TXS);
+});
+</script>
+</body>
+</html>
