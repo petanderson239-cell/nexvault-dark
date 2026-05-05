@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFTs — NexVault</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+</head>
+<body class="app-body">
+<div class="aurora"></div>
+<canvas id="particleCanvas"></canvas>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
+    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
+    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
+    <a href="nft.html" class="nav-item active"><span>&#128444;</span> NFTs</a>
+    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
+    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
+  </div>
+</aside>
+
+<main class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+      <h1 class="page-title">NFT Gallery</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-outline btn-sm" id="viewToggle" onclick="toggleView()">&#9783; List</button>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <section class="kpi-grid">
+    <div class="kpi-card reveal"><div class="kpi-label">Total NFTs</div><div class="kpi-value">9</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Est. Value</div><div class="kpi-value">$1.24M</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Rarest Hold</div><div class="kpi-value">BAYC #4821</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Collections</div><div class="kpi-value">5</div></div>
+  </section>
+
+  <!-- FILTERS -->
+  <section class="filter-bar">
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterNFT('all', this)">All</button>
+      <button class="filter-tab" onclick="filterNFT('bayc', this)">BAYC</button>
+      <button class="filter-tab" onclick="filterNFT('punks', this)">Punks</button>
+      <button class="filter-tab" onclick="filterNFT('solana', this)">Solana</button>
+    </div>
+    <select class="search-input" style="max-width:160px" onchange="sortNFTs(this.value)">
+      <option value="floor-desc">Floor: High to Low</option>
+      <option value="floor-asc">Floor: Low to High</option>
+      <option value="name">Name A-Z</option>
+    </select>
+    <input type="text" class="search-input" placeholder="Search NFT..." oninput="searchNFTs(this.value)" />
+  </section>
+
+  <!-- NFT GRID -->
+  <section class="nft-grid" id="nftGrid"></section>
+</main>
+
+<!-- NFT DETAIL MODAL -->
+<div class="modal-overlay" id="nftModal" onclick="closeModal('nftModal')">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="nftModalTitle">NFT Detail</h3>
+      <button class="modal-close" onclick="closeModal('nftModal')">&times;</button>
+    </div>
+    <div class="nft-modal-body" id="nftModalBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
+    <div class="wallet-grid" id="walletGrid"></div>
+  </div>
+</div>
+
+<nav class="mobile-nav">
+  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
+  <a href="wallet.html" class="mobile-nav-item">&#128179;</a>
+  <a href="tokens.html" class="mobile-nav-item">&#128176;</a>
+  <a href="nft.html" class="mobile-nav-item active">&#128444;</a>
+  <a href="analytics.html" class="mobile-nav-item">&#128202;</a>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
+<script src="assets/js/animations.js"></script>
+<script src="assets/js/wallet.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+const NFTS = [
+  {id:1, name:'BAYC #4821', collection:'BAYC', chain:'ethereum', floor:72.4, acquired:'Jan 2023', rarity:'Top 1%', traits:['Golden Fur','Laser Eyes','Captain Hat'], color1:'#1a1a2e', color2:'#e94560'},
+  {id:2, name:'CryptoPunk #7804', collection:'punks', chain:'ethereum', floor:88.2, acquired:'Mar 2022', rarity:'Top 0.1%', traits:['Alien','Pipe','Small Shades'], color1:'#0f3460', color2:'#533483'},
+  {id:3, name:'Azuki #2109', collection:'azuki', chain:'ethereum', floor:14.8, acquired:'Apr 2023', rarity:'Top 5%', traits:['Red Hoodie','Halo','Blue Eyes'], color1:'#e94560', color2:'#0f3460'},
+  {id:4, name:'DeGods #1337', collection:'solana', chain:'solana', floor:22.1, acquired:'Jul 2023', rarity:'Top 2%', traits:['Gold Chain','Crown','Glitch Eyes'], color1:'#533483', color2:'#1a1a2e'},
+  {id:5, name:'Doodle #8888', collection:'doodles', chain:'ethereum', floor:4.2, acquired:'Sep 2022', rarity:'Top 10%', traits:['Rainbow Hair','Patterned Shirt','Happy'], color1:'#06d6a0', color2:'#118ab2'},
+  {id:6, name:'MAYC #3344', collection:'bayc', chain:'ethereum', floor:11.3, acquired:'Dec 2022', rarity:'Top 3%', traits:['Robot Fur','3D Glasses','Army Hat'], color1:'#ffd166', color2:'#ef476f'},
+  {id:7, name:'Okay Bears #512', collection:'solana', chain:'solana', floor:9.7, acquired:'Feb 2023', rarity:'Top 4%', traits:['Surf Board','Shades','Blue Fur'], color1:'#118ab2', color2:'#06d6a0'},
+  {id:8, name:'CloneX #7701', collection:'clonex', chain:'ethereum', floor:6.8, acquired:'Oct 2022', rarity:'Top 7%', traits:['Alien DNA','Visor','Neon Jacket'], color1:'#9b5de5', color2:'#f15bb5'},
+  {id:9, name:'BEANZ #4412', collection:'azuki', chain:'ethereum', floor:1.9, acquired:'Jun 2023', rarity:'Top 15%', traits:['Blue Body','Witch Hat','Stars'], color1:'#00bbf9', color2:'#9b5de5'},
+];
+
+let filteredNFTs = [...NFTS];
+let isGrid = true;
+
+function genSVG(nft) {
+  return `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
+    <defs><linearGradient id='g${nft.id}' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' style='stop-color:${nft.color1}'/>
+      <stop offset='100%' style='stop-color:${nft.color2}'/>
+    </linearGradient></defs>
+    <rect width='200' height='200' fill='url(#g${nft.id})'/>
+    <text x='100' y='85' text-anchor='middle' font-size='48' fill='white' opacity='0.9'>&#128444;</text>
+    <text x='100' y='130' text-anchor='middle' font-size='12' fill='white' font-family='monospace' opacity='0.8'>${nft.name.split('#')[0].trim()}</text>
+    <text x='100' y='150' text-anchor='middle' font-size='14' fill='white' font-family='monospace'>#${nft.name.split('#')[1]}</text>
+  </svg>`;
+}
+
+function renderNFTs(data) {
+  const grid = document.getElementById('nftGrid');
+  grid.className = isGrid ? 'nft-grid' : 'nft-list';
+  grid.innerHTML = data.map(nft => `
+    <div class="nft-card nft-shine reveal" onclick="openNFT(${nft.id})" data-collection="${nft.collection}">
+      <div class="nft-art">${genSVG(nft)}</div>
+      <div class="nft-info">
+        <div class="nft-name">${nft.name}</div>
+        <div class="nft-meta">
+          <span class="badge badge-info">${nft.chain}</span>
+          <span class="nft-floor">${nft.floor} ETH</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  initScrollReveal();
+}
+
+function openNFT(id) {
+  const nft = NFTS.find(n => n.id === id);
+  document.getElementById('nftModalTitle').textContent = nft.name;
+  document.getElementById('nftModalBody').innerHTML = `
+    <div class="nft-modal-art">${genSVG(nft)}</div>
+    <div class="nft-modal-details">
+      <div class="nft-detail-row"><span>Collection</span><span>${nft.collection.toUpperCase()}</span></div>
+      <div class="nft-detail-row"><span>Chain</span><span>${nft.chain}</span></div>
+      <div class="nft-detail-row"><span>Floor Price</span><span>${nft.floor} ETH</span></div>
+      <div class="nft-detail-row"><span>Acquired</span><span>${nft.acquired}</span></div>
+      <div class="nft-detail-row"><span>Rarity</span><span class="positive">${nft.rarity}</span></div>
+      <div class="nft-traits">${nft.traits.map(t => `<span class="badge badge-info">${t}</span>`).join('')}</div>
+    </div>
+  `;
+  openModal('nftModal');
+}
+
+function filterNFT(col, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filteredNFTs = col === 'all' ? [...NFTS] : NFTS.filter(n => n.collection === col || n.chain === col);
+  renderNFTs(filteredNFTs);
+}
+
+function searchNFTs(val) {
+  renderNFTs(filteredNFTs.filter(n => n.name.toLowerCase().includes(val.toLowerCase())));
+}
+
+function sortNFTs(val) {
+  if (val === 'floor-desc') filteredNFTs.sort((a,b) => b.floor - a.floor);
+  else if (val === 'floor-asc') filteredNFTs.sort((a,b) => a.floor - b.floor);
+  else filteredNFTs.sort((a,b) => a.name.localeCompare(b.name));
+  renderNFTs(filteredNFTs);
+}
+
+function toggleView() {
+  isGrid = !isGrid;
+  document.getElementById('viewToggle').textContent = isGrid ? '&#9783; List' : '&#9783; Grid';
+  renderNFTs(filteredNFTs);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles('particleCanvas');
+  initScrollReveal();
+  renderNFTs(NFTS);
+});
+</script>
+</body>
+</html>
