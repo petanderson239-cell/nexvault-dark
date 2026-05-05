@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — NexVault</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="app-body">
+<div class="aurora"></div>
+<canvas id="particleCanvas"></canvas>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-icon">&#9679;</span>
+    <span class="logo-text">NexVault</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item active"><span>&#128200;</span> Dashboard</a>
+    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
+    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
+    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
+    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
+    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
+      <h1 class="page-title">Dashboard</h1>
+    </div>
+    <div class="topbar-right">
+      <div class="gas-badge" id="gasBadge">&#9981; -- Gwei</div>
+      <div class="wallet-indicator" id="walletIndicator">No Wallet</div>
+    </div>
+  </header>
+
+  <!-- KPI CARDS -->
+  <section class="kpi-grid">
+    <div class="kpi-card tilt-card reveal">
+      <div class="kpi-label">Total Portfolio</div>
+      <div class="kpi-value" id="kpiPortfolio">$284,719.40</div>
+      <div class="kpi-change positive">+4.82% (24h)</div>
+    </div>
+    <div class="kpi-card tilt-card reveal">
+      <div class="kpi-label">All-Time PnL</div>
+      <div class="kpi-value positive" id="kpiPnl">+$94,220.18</div>
+      <div class="kpi-change positive">+49.5% overall</div>
+    </div>
+    <div class="kpi-card tilt-card reveal">
+      <div class="kpi-label">Gas Price</div>
+      <div class="kpi-value" id="kpiGas">28 Gwei</div>
+      <div class="kpi-change">Standard speed</div>
+    </div>
+    <div class="kpi-card tilt-card reveal">
+      <div class="kpi-label">Wallets</div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-change">MetaMask &bull; Phantom &bull; Ledger</div>
+    </div>
+  </section>
+
+  <!-- CHARTS ROW -->
+  <section class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Portfolio Value</h3>
+        <div class="period-tabs">
+          <button class="period-tab active" data-period="24h">24H</button>
+          <button class="period-tab" data-period="7d">7D</button>
+          <button class="period-tab" data-period="30d">30D</button>
+          <button class="period-tab" data-period="1y">1Y</button>
+        </div>
+      </div>
+      <canvas id="portfolioChart" height="120"></canvas>
+    </div>
+    <div class="chart-card chart-card-sm">
+      <div class="chart-header"><h3>Allocation</h3></div>
+      <canvas id="allocationChart" height="180"></canvas>
+    </div>
+  </section>
+
+  <!-- TOP HOLDINGS -->
+  <section class="table-card">
+    <div class="table-header">
+      <h3>Top Holdings</h3>
+      <div class="table-actions">
+        <input type="text" class="search-input" placeholder="Search token..." oninput="filterTable(this.value)" />
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+    <table class="data-table" id="holdingsTable">
+      <thead>
+        <tr>
+          <th>Asset</th>
+          <th>Price</th>
+          <th>24H</th>
+          <th>Holdings</th>
+          <th>Value</th>
+          <th>7D Chart</th>
+        </tr>
+      </thead>
+      <tbody id="holdingsTbody">
+        <tr><td><span class="token-name">Ethereum</span><span class="token-sym">ETH</span></td><td>$3,210.50</td><td class="positive">+2.14%</td><td>42.5 ETH</td><td>$136,446</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
+        <tr><td><span class="token-name">Bitcoin</span><span class="token-sym">BTC</span></td><td>$67,420.00</td><td class="positive">+1.87%</td><td>1.02 BTC</td><td>$68,768</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
+        <tr><td><span class="token-name">Solana</span><span class="token-sym">SOL</span></td><td>$182.30</td><td class="negative">-0.93%</td><td>210 SOL</td><td>$38,283</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
+        <tr><td><span class="token-name">Arbitrum</span><span class="token-sym">ARB</span></td><td>$1.24</td><td class="positive">+5.82%</td><td>12,400 ARB</td><td>$15,376</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
+        <tr><td><span class="token-name">USD Coin</span><span class="token-sym">USDC</span></td><td>$1.00</td><td class="neutral">0.00%</td><td>25,846 USDC</td><td>$25,846</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- BOTTOM ROW -->
+  <section class="bottom-row">
+    <div class="mini-card">
+      <h4>Gas Tracker</h4>
+      <div class="gas-row"><span>Slow</span><span class="gas-val" id="gasSlow">18 Gwei</span></div>
+      <div class="gas-row"><span>Standard</span><span class="gas-val" id="gasStd">28 Gwei</span></div>
+      <div class="gas-row"><span>Fast</span><span class="gas-val" id="gasFast">42 Gwei</span></div>
+    </div>
+    <div class="mini-card">
+      <h4>Recent Transactions</h4>
+      <div class="tx-row"><span class="badge badge-success">Receive</span><span>+2.5 ETH</span><span class="text-muted">2h ago</span></div>
+      <div class="tx-row"><span class="badge badge-danger">Send</span><span>-0.5 ETH</span><span class="text-muted">5h ago</span></div>
+      <div class="tx-row"><span class="badge badge-info">Swap</span><span>ETH &rarr; USDC</span><span class="text-muted">1d ago</span></div>
+      <a href="transactions.html" class="text-link">View all &rarr;</a>
+    </div>
+  </section>
+</main>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <a href="dashboard.html" class="mobile-nav-item active">&#128200; Dashboard</a>
+  <a href="wallet.html" class="mobile-nav-item">&#128179; Wallets</a>
+  <a href="tokens.html" class="mobile-nav-item">&#128176; Tokens</a>
+  <a href="nft.html" class="mobile-nav-item">&#128444; NFTs</a>
+  <a href="analytics.html" class="mobile-nav-item">&#128202; Analytics</a>
+</nav>
+
+<!-- WALLET MODAL -->
+<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Connect Wallet</h3>
+      <button class="modal-close" onclick="closeModal('walletModal')">&times;</button>
+    </div>
+    <div class="wallet-grid" id="walletGrid"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
+<script src="assets/js/animations.js"></script>
+<script src="assets/js/wallet.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles('particleCanvas');
+  initTilt();
+  initScrollReveal();
+  initGasTracker();
+  initPriceTicker();
+  // Portfolio chart
+  initPortfolioChart('portfolioChart');
+  initAllocationChart('allocationChart');
+  // Sparklines
+  document.querySelectorAll('.sparkline').forEach(c => initSparkline(c));
+  // Period tabs
+  document.querySelectorAll('.period-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updatePortfolioChart('portfolioChart', btn.dataset.period);
+    });
+  });
+});
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+function filterTable(val) {
+  const rows = document.querySelectorAll('#holdingsTbody tr');
+  rows.forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
