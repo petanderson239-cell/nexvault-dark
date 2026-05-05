@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics — NexVault</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="app-body">
+<div class="aurora"></div>
+<canvas id="particleCanvas"></canvas>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
+    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
+    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
+    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
+    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
+    <a href="analytics.html" class="nav-item active"><span>&#128202;</span> Analytics</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
+  </div>
+</aside>
+
+<main class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+      <h1 class="page-title">Analytics</h1>
+    </div>
+    <div class="topbar-right">
+      <div class="period-tabs">
+        <button class="period-tab active" onclick="setPeriod('30d',this)">30D</button>
+        <button class="period-tab" onclick="setPeriod('90d',this)">90D</button>
+        <button class="period-tab" onclick="setPeriod('1y',this)">1Y</button>
+        <button class="period-tab" onclick="setPeriod('all',this)">All</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI CARDS -->
+  <section class="kpi-grid">
+    <div class="kpi-card reveal"><div class="kpi-label">Portfolio Value</div><div class="kpi-value">$284,719</div><div class="kpi-change positive">+4.82%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Total PnL</div><div class="kpi-value positive">+$94,220</div><div class="kpi-change positive">+49.5%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Best Month</div><div class="kpi-value positive">Mar +28.4%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Worst Month</div><div class="kpi-value negative">Jun -12.1%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Sharpe Ratio</div><div class="kpi-value">2.14</div><div class="kpi-change">Good</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Max Drawdown</div><div class="kpi-value negative">-18.2%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Win Rate</div><div class="kpi-value positive">68%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Avg Hold Time</div><div class="kpi-value">47 days</div></div>
+  </section>
+
+  <!-- CHARTS ROW 1 -->
+  <section class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header"><h3>Portfolio vs BTC vs ETH</h3></div>
+      <canvas id="compareChart" height="120"></canvas>
+    </div>
+    <div class="chart-card chart-card-sm">
+      <div class="chart-header"><h3>Monthly PnL</h3></div>
+      <canvas id="pnlChart" height="180"></canvas>
+    </div>
+  </section>
+
+  <!-- CHARTS ROW 2 -->
+  <section class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header"><h3>Chain Distribution</h3></div>
+      <canvas id="chainChart" height="120"></canvas>
+    </div>
+    <div class="chart-card chart-card-sm">
+      <div class="chart-header"><h3>Asset Allocation</h3></div>
+      <canvas id="allocChart" height="180"></canvas>
+    </div>
+  </section>
+
+  <!-- RISK TABLE -->
+  <section class="table-card">
+    <div class="table-header"><h3>Risk Metrics</h3></div>
+    <table class="data-table">
+      <thead><tr><th>Metric</th><th>Value</th><th>Benchmark</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Sharpe Ratio</td><td>2.14</td><td>&gt;1.0</td><td><span class="badge badge-success">Excellent</span></td></tr>
+        <tr><td>Sortino Ratio</td><td>3.02</td><td>&gt;2.0</td><td><span class="badge badge-success">Excellent</span></td></tr>
+        <tr><td>Max Drawdown</td><td>-18.2%</td><td>&lt;25%</td><td><span class="badge badge-success">Good</span></td></tr>
+        <tr><td>Volatility (30D)</td><td>24.8%</td><td>&lt;30%</td><td><span class="badge badge-success">Good</span></td></tr>
+        <tr><td>Beta (vs BTC)</td><td>1.24</td><td>~1.0</td><td><span class="badge badge-warning">High</span></td></tr>
+        <tr><td>Correlation (BTC)</td><td>0.82</td><td>&lt;0.9</td><td><span class="badge badge-success">Good</span></td></tr>
+        <tr><td>Win Rate</td><td>68%</td><td>&gt;55%</td><td><span class="badge badge-success">Good</span></td></tr>
+        <tr><td>Avg Gain/Loss Ratio</td><td>2.1x</td><td>&gt;1.5x</td><td><span class="badge badge-success">Good</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
+    <div class="wallet-grid" id="walletGrid"></div>
+  </div>
+</div>
+
+<nav class="mobile-nav">
+  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
+  <a href="wallet.html" class="mobile-nav-item">&#128179;</a>
+  <a href="tokens.html" class="mobile-nav-item">&#128176;</a>
+  <a href="nft.html" class="mobile-nav-item">&#128444;</a>
+  <a href="analytics.html" class="mobile-nav-item active">&#128202;</a>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
+<script src="assets/js/animations.js"></script>
+<script src="assets/js/wallet.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles('particleCanvas');
+  initScrollReveal();
+
+  // Compare chart
+  const compareCtx = document.getElementById('compareChart');
+  const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  new Chart(compareCtx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {label:'Portfolio', data:[100,112,144,138,151,133,158,172,165,184,201,215], borderColor:'#00f5d4', backgroundColor:'rgba(0,245,212,0.08)', tension:0.4, fill:true},
+        {label:'BTC', data:[100,108,128,121,135,118,142,154,148,162,178,190], borderColor:'#f7931a', backgroundColor:'transparent', tension:0.4},
+        {label:'ETH', data:[100,115,140,130,148,128,155,168,160,178,196,210], borderColor:'#627eea', backgroundColor:'transparent', tension:0.4},
+      ]
+    },
+    options:{responsive:true, plugins:{legend:{labels:{color:'#a8b2c1'}}}, scales:{x:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // PnL bar chart
+  const pnlCtx = document.getElementById('pnlChart');
+  const pnlData = [12,8,28,-4,13,-12,18,14,-5,19,17,9];
+  new Chart(pnlCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'PnL %',
+        data: pnlData,
+        backgroundColor: pnlData.map(v => v >= 0 ? 'rgba(0,245,212,0.7)' : 'rgba(239,68,68,0.7)'),
+        borderRadius: 4,
+      }]
+    },
+    options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // Chain dist
+  const chainCtx = document.getElementById('chainChart');
+  new Chart(chainCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Ethereum','Solana','Bitcoin','Arbitrum','Polygon','BNB'],
+      datasets: [{label:'Value $', data:[198442,47661,38616,15376,6888,4950], backgroundColor:['#627eea','#9945ff','#f7931a','#12aaff','#8247e5','#f0b90b'], borderRadius:4}]
+    },
+    options:{indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  // Alloc donut
+  const allocCtx = document.getElementById('allocChart');
+  new Chart(allocCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['ETH','BTC','SOL','USDC','ARB','Others'],
+      datasets: [{data:[47.9,24.2,13.4,9.1,5.4,100], backgroundColor:['#627eea','#f7931a','#9945ff','#2775ca','#12aaff','#00f5d4'], borderWidth:0}]
+    },
+    options:{cutout:'72%', responsive:true, plugins:{legend:{position:'right', labels:{color:'#a8b2c1', padding:12}}}}
+  });
+});
+
+function setPeriod(period, btn) {
+  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
