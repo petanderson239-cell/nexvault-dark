@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tokens — NexVault</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="app-body">
+<div class="aurora"></div>
+<canvas id="particleCanvas"></canvas>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
+  <nav class="sidebar-nav">
+    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
+    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
+    <a href="tokens.html" class="nav-item active"><span>&#128176;</span> Tokens</a>
+    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
+    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
+    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
+  </div>
+</aside>
+
+<main class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+      <h1 class="page-title">Tokens</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-outline btn-sm" onclick="exportTableCSV()">Export CSV</button>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <section class="kpi-grid">
+    <div class="kpi-card reveal"><div class="kpi-label">Total Tokens</div><div class="kpi-value">12</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Token Value</div><div class="kpi-value">$284,719</div><div class="kpi-change positive">+4.82%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Best Gainer</div><div class="kpi-value positive">ARB +5.82%</div></div>
+    <div class="kpi-card reveal"><div class="kpi-label">Biggest Drop</div><div class="kpi-value negative">LINK -2.31%</div></div>
+  </section>
+
+  <!-- FILTERS -->
+  <section class="filter-bar">
+    <div class="filter-tabs" id="chainTabs">
+      <button class="filter-tab active" onclick="filterChain('all', this)">All Chains</button>
+      <button class="filter-tab" onclick="filterChain('ethereum', this)">Ethereum</button>
+      <button class="filter-tab" onclick="filterChain('solana', this)">Solana</button>
+      <button class="filter-tab" onclick="filterChain('bnb', this)">BNB</button>
+      <button class="filter-tab" onclick="filterChain('arbitrum', this)">Arbitrum</button>
+    </div>
+    <input type="text" class="search-input" id="tokenSearch" placeholder="Search token..." oninput="searchTokens(this.value)" />
+  </section>
+
+  <!-- TOKEN TABLE -->
+  <section class="table-card">
+    <table class="data-table" id="tokenTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th onclick="sortTokens('name')" style="cursor:pointer">Asset &#9651;</th>
+          <th onclick="sortTokens('price')" style="cursor:pointer">Price &#9651;</th>
+          <th>24H</th>
+          <th>7D</th>
+          <th>Holdings</th>
+          <th onclick="sortTokens('value')" style="cursor:pointer">Value &#9651;</th>
+          <th>Chain</th>
+          <th>7D Chart</th>
+        </tr>
+      </thead>
+      <tbody id="tokenTbody">
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<nav class="mobile-nav">
+  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
+  <a href="wallet.html" class="mobile-nav-item">&#128179;</a>
+  <a href="tokens.html" class="mobile-nav-item active">&#128176;</a>
+  <a href="nft.html" class="mobile-nav-item">&#128444;</a>
+  <a href="analytics.html" class="mobile-nav-item">&#128202;</a>
+</nav>
+
+<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
+    <div class="wallet-grid" id="walletGrid"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
+<script src="assets/js/animations.js"></script>
+<script src="assets/js/wallet.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+const TOKENS = [
+  {rank:1, name:'Ethereum', sym:'ETH', price:'$3,210.50', change24:'+2.14%', change7:'+8.32%', holdings:'42.5 ETH', value:136446, chain:'ethereum', pos:true},
+  {rank:2, name:'Bitcoin', sym:'BTC', price:'$67,420.00', change24:'+1.87%', change7:'+6.15%', holdings:'1.02 BTC', value:68768, chain:'ethereum', pos:true},
+  {rank:3, name:'Solana', sym:'SOL', price:'$182.30', change24:'-0.93%', change7:'+3.41%', holdings:'210 SOL', value:38283, chain:'solana', pos:false},
+  {rank:4, name:'USD Coin', sym:'USDC', price:'$1.00', change24:'0.00%', change7:'0.00%', holdings:'25,846 USDC', value:25846, chain:'ethereum', pos:true},
+  {rank:5, name:'Arbitrum', sym:'ARB', price:'$1.24', change24:'+5.82%', change7:'+12.4%', holdings:'12,400 ARB', value:15376, chain:'arbitrum', pos:true},
+  {rank:6, name:'Chainlink', sym:'LINK', price:'$17.34', change24:'-2.31%', change7:'-1.12%', holdings:'840 LINK', value:14566, chain:'ethereum', pos:false},
+  {rank:7, name:'Uniswap', sym:'UNI', price:'$9.82', change24:'+1.44%', change7:'+4.28%', holdings:'1,200 UNI', value:11784, chain:'ethereum', pos:true},
+  {rank:8, name:'Wrapped BTC', sym:'WBTC', price:'$67,305.00', change24:'+1.79%', change7:'+5.98%', holdings:'0.32 WBTC', value:21538, chain:'ethereum', pos:true},
+  {rank:9, name:'BNB', sym:'BNB', price:'$412.50', change24:'+0.88%', change7:'+2.71%', holdings:'12 BNB', value:4950, chain:'bnb', pos:true},
+  {rank:10, name:'Polygon', sym:'MATIC', price:'$0.82', change24:'-0.54%', change7:'+1.82%', holdings:'8,400 MATIC', value:6888, chain:'ethereum', pos:false},
+  {rank:11, name:'Avalanche', sym:'AVAX', price:'$34.80', change24:'+3.22%', change7:'+9.14%', holdings:'10 AVAX', value:348, chain:'ethereum', pos:true},
+  {rank:12, name:'Jito', sym:'JTO', price:'$4.47', change24:'+0.61%', change7:'+5.33%', holdings:'2,100 JTO', value:9387, chain:'solana', pos:true},
+];
+
+let filtered = [...TOKENS];
+
+function renderTable(data) {
+  const tbody = document.getElementById('tokenTbody');
+  tbody.innerHTML = data.map(t => `
+    <tr data-chain="${t.chain}">
+      <td>${t.rank}</td>
+      <td><span class="token-name">${t.name}</span> <span class="token-sym">${t.sym}</span></td>
+      <td>${t.price}</td>
+      <td class="${t.pos ? 'positive' : 'negative'}">${t.change24}</td>
+      <td class="${parseFloat(t.change7) >= 0 ? 'positive' : 'negative'}">${t.change7}</td>
+      <td>${t.holdings}</td>
+      <td>$${t.value.toLocaleString()}</td>
+      <td><span class="badge badge-info">${t.chain}</span></td>
+      <td><canvas class="sparkline" width="80" height="30"></canvas></td>
+    </tr>
+  `).join('');
+  tbody.querySelectorAll('.sparkline').forEach(c => initSparkline(c));
+}
+
+function filterChain(chain, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtered = chain === 'all' ? [...TOKENS] : TOKENS.filter(t => t.chain === chain);
+  renderTable(filtered);
+}
+
+function searchTokens(val) {
+  const f = val.toLowerCase();
+  renderTable(filtered.filter(t => t.name.toLowerCase().includes(f) || t.sym.toLowerCase().includes(f)));
+}
+
+function sortTokens(field) {
+  if (field === 'value') filtered.sort((a,b) => b.value - a.value);
+  else if (field === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+  renderTable(filtered);
+}
+
+function exportTableCSV() {
+  const rows = [['#','Asset','Symbol','Price','24H','7D','Holdings','Value','Chain']];
+  TOKENS.forEach(t => rows.push([t.rank, t.name, t.sym, t.price, t.change24, t.change7, t.holdings, t.value, t.chain]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'tokens.csv';
+  a.click();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initParticles('particleCanvas');
+  initScrollReveal();
+  renderTable(TOKENS);
+});
+</script>
+</body>
+</html>
