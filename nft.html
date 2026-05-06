@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NFT Gallery — NexVault</title>
   <meta name="description" content="View all your NFTs from Ethereum, Solana, Polygon in one beautiful gallery." />
-  //fonts.googleapis.com" />
-  //fonts.gstatic.com" crossorigin />
-  //fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
-  /css/style.css" />
-  /css/animations.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
   <style>
     .nft-filters { display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1.5rem; }
     .filter-btn { padding:.45rem 1.1rem; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:.82rem; cursor:pointer; transition:.25s; }
@@ -45,9 +45,8 @@
 </head>
 <body class="app-body">
   <div class="aurora"></div>
-  anvas id="particleCanvas"></canvas>
+  <canvas id="particleCanvas"></canvas>
 
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
     <nav class="sidebar-nav">
@@ -58,12 +57,9 @@
       <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
       <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
     </nav>
-    <div class="sidebar-footer">
-      <a href="index.html" class="nav-item"><span>&#127968;</span> Home</a>
-    </div>
+    <div class="sidebar-footer"><a href="index.html" class="nav-item"><span>&#127968;</span> Home</a></div>
   </aside>
 
-  <!-- Main -->
   <main class="main-content">
     <header class="page-header">
       <div>
@@ -80,27 +76,13 @@
       </div>
     </header>
 
-    <!-- Stats -->
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-label">Total NFTs</div>
-        <div class="stat-value" id="totalNFTs">12</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Est. Value</div>
-        <div class="stat-value green">$48,320</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Collections</div>
-        <div class="stat-value">6</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Floor Value</div>
-        <div class="stat-value">$31,500</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">Total NFTs</div><div class="stat-value" id="totalNFTs">12</div></div>
+      <div class="stat-card"><div class="stat-label">Est. Value</div><div class="stat-value green">$48,320</div></div>
+      <div class="stat-card"><div class="stat-label">Collections</div><div class="stat-value">6</div></div>
+      <div class="stat-card"><div class="stat-label">Floor Value</div><div class="stat-value">$31,500</div></div>
     </div>
 
-    <!-- Filters -->
     <div class="nft-filters" id="collectionFilters">
       <button class="filter-btn active" onclick="filterCollection('all',this)">All</button>
       <button class="filter-btn" onclick="filterCollection('bayc',this)">BAYC</button>
@@ -110,21 +92,15 @@
       <button class="filter-btn" onclick="filterCollection('clonex',this)">Clone X</button>
       <button class="filter-btn" onclick="filterCollection('sandbox',this)">The Sandbox</button>
     </div>
-
-    <!-- NFT Grid -->
     <div class="nft-grid" id="nftGrid"></div>
   </main>
 
-  <!-- NFT Detail Modal -->
   <div class="nft-modal-overlay" id="nftModal" onclick="closeNFTModal(event)">
     <div class="nft-modal" id="nftModalContent">
       <div class="nft-modal-img" id="modalImg"></div>
       <div class="nft-modal-body">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <div class="nft-collection" id="modalCollection"></div>
-            <h3 id="modalName"></h3>
-          </div>
+          <div><div class="nft-collection" id="modalCollection"></div><h3 id="modalName"></h3></div>
           <button onclick="closeNFTModal()" style="background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;">&times;</button>
         </div>
         <div style="display:flex;gap:1rem;margin-top:.75rem;flex-wrap:wrap;">
@@ -144,84 +120,15 @@
   <script src="config.js"></script>
   <script src="assets/js/animations.js"></script>
   <script>
-    const NFT_DATA = [
-      { id:'#8817', name:'Bored Ape #8817', collection:'bayc', collectionName:'BAYC', chain:'ethereum', floor:'68.5 ETH', floorUsd:'$217,000', emoji:'🦍', rarity:'Rare', traits:[{t:'Background',v:'Army Green'},{t:'Eyes',v:'Bored'},{t:'Mouth',v:'Bored Unshaven'},{t:'Hat',v:'Sea Captain'},{t:'Fur',v:'Brown'},{t:'Clothes',v:'Tie Dye'}], opensea:'https://opensea.io/assets/ethereum/0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d/8817' },
-      { id:'#3100', name:'CryptoPunk #3100', collection:'cryptopunks', collectionName:'CryptoPunks', chain:'ethereum', floor:'2500 ETH', floorUsd:'$7,925,000', emoji:'👾', rarity:'Legendary', traits:[{t:'Type',v:'Alien'},{t:'Accessory',v:'Headband'},{t:'Rarity',v:'0.09%'},{t:'Count',v:'2'},{t:'Attr',v:'Alien'},{t:'Skin',v:'Alien'}], opensea:'https://opensea.io/assets/ethereum/0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb/3100' },
-      { id:'#1', name:'DeGod #1', collection:'degods', collectionName:'DeGods', chain:'solana', floor:'12.4 SOL', floorUsd:'$1,860', emoji:'🏺', rarity:'Epic', traits:[{t:'Background',v:'Dust'},{t:'Body',v:'Gold'},{t:'Eyes',v:'Angry'},{t:'Mouth',v:'Smirk'},{t:'Hat',v:'Crown'},{t:'Rarity',v:'Top 1%'}], opensea:'https://magiceden.io/item-details/DeGods' },
-      { id:'#9605', name:'Azuki #9605', collection:'azuki', collectionName:'Azuki', chain:'ethereum', floor:'9.8 ETH', floorUsd:'$31,080', emoji:'🌸', rarity:'Uncommon', traits:[{t:'Type',v:'Human'},{t:'Hair',v:'Pink Hairband'},{t:'Clothing',v:'White Qipao'},{t:'Eyes',v:'Striking'},{t:'Mouth',v:'Lipstick'},{t:'Background',v:'Off White D'}], opensea:'https://opensea.io/assets/ethereum/0xed5af388653567af2f388e6224dc7c4b3241c544/9605' },
-      { id:'#11571', name:'Clone X #11571', collection:'clonex', collectionName:'Clone X', chain:'ethereum', floor:'2.1 ETH', floorUsd:'$6,657', emoji:'🤖', rarity:'Rare', traits:[{t:'DNA',v:'Human'},{t:'Eye Color',v:'Gold'},{t:'Face',v:'Level 4'},{t:'Mouth',v:'Lips'},{t:'Clothing',v:'Hoodie'},{t:'Background',v:'Beige'}], opensea:'https://opensea.io/assets/ethereum/0x49cf6f5d44e70224e2e23fdcdd2c053f30ada28b/11571' },
-      { id:'#204', name:'The Sandbox #204', collection:'sandbox', collectionName:'The Sandbox', chain:'polygon', floor:'0.8 ETH', floorUsd:'$2,536', emoji:'🏖️', rarity:'Common', traits:[{t:'Type',v:'Land'},{t:'Size',v:'1x1'},{t:'Zone',v:'Premium'},{t:'Neighbor',v:'Atari'},{t:'Rarity',v:'Common'},{t:'Region',v:'West'}], opensea:'https://opensea.io/assets/matic/0x50f5474724e0ee42d9a4e711ccfb275809fd6d4a/204' },
-      { id:'#2087', name:'Bored Ape #2087', collection:'bayc', collectionName:'BAYC', chain:'ethereum', floor:'68.5 ETH', floorUsd:'$217,000', emoji:'🐒', rarity:'Uncommon', traits:[{t:'Background',v:'New Punk Blue'},{t:'Eyes',v:'Wide Eyed'},{t:'Mouth',v:'Bored Cigarette'},{t:'Hat',v:'Stuntman Helmet'},{t:'Fur',v:'Gray'},{t:'Clothes',v:'Smoking Jacket'}], opensea:'https://opensea.io/assets/ethereum/0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d/2087' },
-      { id:'#7804', name:'CryptoPunk #7804', collection:'cryptopunks', collectionName:'CryptoPunks', chain:'ethereum', floor:'2500 ETH', floorUsd:'$7,925,000', emoji:'🕶️', rarity:'Legendary', traits:[{t:'Type',v:'Alien'},{t:'Pipe',v:'Yes'},{t:'Small Shades',v:'Yes'},{t:'Cap Forward',v:'Yes'},{t:'Rarity',v:'0.09%'},{t:'Attr Count',v:'3'}], opensea:'https://opensea.io/assets/ethereum/0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb/7804' },
-      { id:'#420', name:'DeGod #420', collection:'degods', collectionName:'DeGods', chain:'solana', floor:'12.4 SOL', floorUsd:'$1,860', emoji:'⚱️', rarity:'Rare', traits:[{t:'Background',v:'Dust'},{t:'Body',v:'Silver'},{t:'Eyes',v:'Laser'},{t:'Mouth',v:'Gold Grill'},{t:'Hat',v:'None'},{t:'Rarity',v:'Top 5%'}], opensea:'https://magiceden.io' },
-      { id:'#5678', name:'Azuki #5678', collection:'azuki', collectionName:'Azuki', chain:'ethereum', floor:'9.8 ETH', floorUsd:'$31,080', emoji:'🌺', rarity:'Epic', traits:[{t:'Type',v:'Spirit'},{t:'Hair',v:'Blue Bun'},{t:'Clothing',v:'Red Kimono'},{t:'Eyes',v:'Closed'},{t:'Mouth',v:'None'},{t:'Background',v:'Off White A'}], opensea:'https://opensea.io/assets/ethereum/0xed5af388653567af2f388e6224dc7c4b3241c544/5678' },
-      { id:'#332', name:'Clone X #332', collection:'clonex', collectionName:'Clone X', chain:'ethereum', floor:'2.1 ETH', floorUsd:'$6,657', emoji:'🦾', rarity:'Common', traits:[{t:'DNA',v:'Robot'},{t:'Eye Color',v:'Red'},{t:'Face',v:'Level 2'},{t:'Mouth',v:'Metal'},{t:'Clothing',v:'Grey Tee'},{t:'Background',v:'Light Blue'}], opensea:'https://opensea.io' },
-      { id:'#999', name:'The Sandbox #999', collection:'sandbox', collectionName:'The Sandbox', chain:'polygon', floor:'0.8 ETH', floorUsd:'$2,536', emoji:'🏝️', rarity:'Uncommon', traits:[{t:'Type',v:'Land'},{t:'Size',v:'3x3'},{t:'Zone',v:'Standard'},{t:'Neighbor',v:'Snoop Dogg'},{t:'Rarity',v:'Uncommon'},{t:'Region',v:'Central'}], opensea:'https://opensea.io' },
-    ];
-
-    let activeCollection = 'all';
-    let activeChain = 'all';
-
-    function getRarityColor(r) {
-      return { Legendary:'#FFD700', Epic:'#9B59B6', Rare:'#3498DB', Uncommon:'#2ECC71', Common:'var(--muted)' }[r] || 'var(--muted)';
-    }
-
-    function renderNFTs() {
-      let data = NFT_DATA;
-      if (activeCollection !== 'all') data = data.filter(n => n.collection === activeCollection);
-      if (activeChain !== 'all') data = data.filter(n => n.chain === activeChain);
-      document.getElementById('totalNFTs').textContent = data.length;
-      document.getElementById('nftGrid').innerHTML = data.length ? data.map((n,i) => `
-        <div class="nft-card" onclick="openNFTModal(${NFT_DATA.indexOf(n)})" style="animation-delay:${i*0.05}s">
-          <div class="nft-img">${n.emoji}</div>
-          <div class="nft-info">
-            <div class="nft-collection">${n.collectionName}</div>
-            <div class="nft-name">${n.name}</div>
-            <div class="nft-floor">
-              <div>
-                <div class="nft-floor-label">Floor</div>
-                <div class="nft-floor-value">${n.floorUsd}</div>
-              </div>
-              <div style="text-align:right;">
-                <span class="nft-chain-badge">${n.chain}</span><br/>
-                <span style="font-size:.7rem;color:${getRarityColor(n.rarity)};font-weight:700;">${n.rarity}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `).join('') : '<div style="color:var(--muted);grid-column:1/-1;text-align:center;padding:3rem;">No NFTs found for this filter.</div>';
-    }
-
-    function filterCollection(col, btn) {
-      activeCollection = col;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderNFTs();
-    }
-
-    function filterNFTs() {
-      activeChain = document.getElementById('chainFilter').value;
-      renderNFTs();
-    }
-
-    function openNFTModal(idx) {
-      const n = NFT_DATA[idx];
-      document.getElementById('modalImg').textContent = n.emoji;
-      document.getElementById('modalCollection').textContent = n.collectionName;
-      document.getElementById('modalName').textContent = n.name;
-      document.getElementById('modalFloor').textContent = n.floorUsd;
-      document.getElementById('modalChain').textContent = n.chain.charAt(0).toUpperCase()+n.chain.slice(1);
-      document.getElementById('modalId').textContent = n.id;
-      document.getElementById('modalTraits').innerHTML = n.traits.map(t => `
-        <div class="nft-trait">
-          <div class="nft-trait-type">${t.t}</div>
-          <div class="nft-trait-val">${t.v}</div>
-        </div>
-      `).join('');
-      document.getElementById('modalOpenSeaBtn').onclick = () => window.open(n.opensea,'_blank');
-      document.getElementById('nftModal').classList.add('open');
-    }
-
-    function closeNFTModal(e) {
-      if (!e || e.target === document.getElementById('nftModal')) {
-        document.getElementById('n
+const NFT_DATA=[{id:'#8817',name:'Bored Ape #8817',collection:'bayc',collectionName:'BAYC',chain:'ethereum',floor:'68.5 ETH',floorUsd:'$217,000',emoji:'\uD83E\uDD8D',rarity:'Rare',traits:[{t:'Background',v:'Army Green'},{t:'Eyes',v:'Bored'},{t:'Mouth',v:'Bored Unshaven'},{t:'Hat',v:'Sea Captain'},{t:'Fur',v:'Brown'},{t:'Clothes',v:'Tie Dye'}],opensea:'https://opensea.io/assets/ethereum/0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d/8817'},{id:'#3100',name:'CryptoPunk #3100',collection:'cryptopunks',collectionName:'CryptoPunks',chain:'ethereum',floor:'2500 ETH',floorUsd:'$7,925,000',emoji:'\uD83D\uDC7E',rarity:'Legendary',traits:[{t:'Type',v:'Alien'},{t:'Accessory',v:'Headband'},{t:'Rarity',v:'0.09%'},{t:'Count',v:'2'},{t:'Attr',v:'Alien'},{t:'Skin',v:'Alien'}],opensea:'https://opensea.io/assets/ethereum/0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb/3100'},{id:'#1',name:'DeGod #1',collection:'degods',collectionName:'DeGods',chain:'solana',floor:'12.4 SOL',floorUsd:'$1,860',emoji:'\uD83C\uDFFA',rarity:'Epic',traits:[{t:'Background',v:'Dust'},{t:'Body',v:'Gold'},{t:'Eyes',v:'Angry'},{t:'Mouth',v:'Smirk'},{t:'Hat',v:'Crown'},{t:'Rarity',v:'Top 1%'}],opensea:'https://magiceden.io/item-details/DeGods'},{id:'#9605',name:'Azuki #9605',collection:'azuki',collectionName:'Azuki',chain:'ethereum',floor:'9.8 ETH',floorUsd:'$31,080',emoji:'\uD83C\uDF38',rarity:'Uncommon',traits:[{t:'Type',v:'Human'},{t:'Hair',v:'Pink Hairband'},{t:'Clothing',v:'White Qipao'},{t:'Eyes',v:'Striking'},{t:'Mouth',v:'Lipstick'},{t:'Background',v:'Off White D'}],opensea:'https://opensea.io/assets/ethereum/0xed5af388653567af2f388e6224dc7c4b3241c544/9605'},{id:'#11571',name:'Clone X #11571',collection:'clonex',collectionName:'Clone X',chain:'ethereum',floor:'2.1 ETH',floorUsd:'$6,657',emoji:'\uD83E\uDD16',rarity:'Rare',traits:[{t:'DNA',v:'Human'},{t:'Eye Color',v:'Gold'},{t:'Face',v:'Level 4'},{t:'Mouth',v:'Lips'},{t:'Clothing',v:'Hoodie'},{t:'Background',v:'Beige'}],opensea:'https://opensea.io/assets/ethereum/0x49cf6f5d44e70224e2e23fdcdd2c053f30ada28b/11571'},{id:'#204',name:'The Sandbox #204',collection:'sandbox',collectionName:'The Sandbox',chain:'polygon',floor:'0.8 ETH',floorUsd:'$2,536',emoji:'\uD83C\uDFD6\uFE0F',rarity:'Common',traits:[{t:'Type',v:'Land'},{t:'Size',v:'1x1'},{t:'Zone',v:'Premium'},{t:'Neighbor',v:'Atari'},{t:'Rarity',v:'Common'},{t:'Region',v:'West'}],opensea:'https://opensea.io/assets/matic/0x50f5474724e0ee42d9a4e711ccfb275809fd6d4a/204'},{id:'#2087',name:'Bored Ape #2087',collection:'bayc',collectionName:'BAYC',chain:'ethereum',floor:'68.5 ETH',floorUsd:'$217,000',emoji:'\uD83D\uDC12',rarity:'Uncommon',traits:[{t:'Background',v:'New Punk Blue'},{t:'Eyes',v:'Wide Eyed'},{t:'Mouth',v:'Bored Cigarette'},{t:'Hat',v:'Stuntman Helmet'},{t:'Fur',v:'Gray'},{t:'Clothes',v:'Smoking Jacket'}],opensea:'https://opensea.io/assets/ethereum/0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d/2087'},{id:'#7804',name:'CryptoPunk #7804',collection:'cryptopunks',collectionName:'CryptoPunks',chain:'ethereum',floor:'2500 ETH',floorUsd:'$7,925,000',emoji:'\uD83D\uDD76\uFE0F',rarity:'Legendary',traits:[{t:'Type',v:'Alien'},{t:'Pipe',v:'Yes'},{t:'Small Shades',v:'Yes'},{t:'Cap Forward',v:'Yes'},{t:'Rarity',v:'0.09%'},{t:'Attr Count',v:'3'}],opensea:'https://opensea.io/assets/ethereum/0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb/7804'},{id:'#420',name:'DeGod #420',collection:'degods',collectionName:'DeGods',chain:'solana',floor:'12.4 SOL',floorUsd:'$1,860',emoji:'\u26B1\uFE0F',rarity:'Rare',traits:[{t:'Background',v:'Dust'},{t:'Body',v:'Silver'},{t:'Eyes',v:'Laser'},{t:'Mouth',v:'Gold Grill'},{t:'Hat',v:'None'},{t:'Rarity',v:'Top 5%'}],opensea:'https://magiceden.io'},{id:'#5678',name:'Azuki #5678',collection:'azuki',collectionName:'Azuki',chain:'ethereum',floor:'9.8 ETH',floorUsd:'$31,080',emoji:'\uD83C\uDF3A',rarity:'Epic',traits:[{t:'Type',v:'Spirit'},{t:'Hair',v:'Blue Bun'},{t:'Clothing',v:'Red Kimono'},{t:'Eyes',v:'Closed'},{t:'Mouth',v:'None'},{t:'Background',v:'Off White A'}],opensea:'https://opensea.io/assets/ethereum/0xed5af388653567af2f388e6224dc7c4b3241c544/5678'},{id:'#332',name:'Clone X #332',collection:'clonex',collectionName:'Clone X',chain:'ethereum',floor:'2.1 ETH',floorUsd:'$6,657',emoji:'\uD83E\uDDBE',rarity:'Common',traits:[{t:'DNA',v:'Robot'},{t:'Eye Color',v:'Red'},{t:'Face',v:'Level 2'},{t:'Mouth',v:'Metal'},{t:'Clothing',v:'Grey Tee'},{t:'Background',v:'Light Blue'}],opensea:'https://opensea.io'},{id:'#999',name:'The Sandbox #999',collection:'sandbox',collectionName:'The Sandbox',chain:'polygon',floor:'0.8 ETH',floorUsd:'$2,536',emoji:'\uD83C\uDFDD\uFE0F',rarity:'Uncommon',traits:[{t:'Type',v:'Land'},{t:'Size',v:'3x3'},{t:'Zone',v:'Standard'},{t:'Neighbor',v:'Snoop Dogg'},{t:'Rarity',v:'Uncommon'},{t:'Region',v:'Central'}],opensea:'https://opensea.io'}];
+let activeCollection='all',activeChain='all';
+function getRarityColor(r){return {Legendary:'#FFD700',Epic:'#9B59B6',Rare:'#3498DB',Uncommon:'#2ECC71',Common:'var(--muted)'}[r]||'var(--muted)';}
+function renderNFTs(){let data=NFT_DATA;if(activeCollection!=='all')data=data.filter(n=>n.collection===activeCollection);if(activeChain!=='all')data=data.filter(n=>n.chain===activeChain);document.getElementById('totalNFTs').textContent=data.length;document.getElementById('nftGrid').innerHTML=data.length?data.map((n,i)=>`<div class="nft-card" onclick="openNFTModal(${NFT_DATA.indexOf(n)})" style="animation-delay:${i*0.05}s"><div class="nft-img">${n.emoji}</div><div class="nft-info"><div class="nft-collection">${n.collectionName}</div><div class="nft-name">${n.name}</div><div class="nft-floor"><div><div class="nft-floor-label">Floor</div><div class="nft-floor-value">${n.floorUsd}</div></div><div style="text-align:right;"><span class="nft-chain-badge">${n.chain}</span><br/><span style="font-size:.7rem;color:${getRarityColor(n.rarity)};font-weight:700;">${n.rarity}</span></div></div></div></div>`).join(''):'<div style="color:var(--muted);grid-column:1/-1;text-align:center;padding:3rem;">No NFTs found for this filter.</div>';}
+function filterCollection(col,btn){activeCollection=col;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderNFTs();}
+function filterNFTs(){activeChain=document.getElementById('chainFilter').value;renderNFTs();}
+function openNFTModal(idx){const n=NFT_DATA[idx];document.getElementById('modalImg').textContent=n.emoji;document.getElementById('modalCollection').textContent=n.collectionName;document.getElementById('modalName').textContent=n.name;document.getElementById('modalFloor').textContent=n.floorUsd;document.getElementById('modalChain').textContent=n.chain.charAt(0).toUpperCase()+n.chain.slice(1);document.getElementById('modalId').textContent=n.id;document.getElementById('modalTraits').innerHTML=n.traits.map(t=>`<div class="nft-trait"><div class="nft-trait-type">${t.t}</div><div class="nft-trait-val">${t.v}</div></div>`).join('');document.getElementById('modalOpenSeaBtn').onclick=()=>window.open(n.opensea,'_blank');document.getElementById('nftModal').classList.add('open');}
+function closeNFTModal(e){if(!e||e.target===document.getElementById('nftModal')){document.getElementById('nftModal').classList.remove('open');}}
+renderNFTs();
+  </script>
+</body>
+</html>
