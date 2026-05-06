@@ -1,190 +1,323 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analytics — NexVault</title>
+  <meta name="description" content="Deep portfolio analytics across returns, risk, allocation and benchmark performance." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/animations.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .dash-layout { display:grid; grid-template-columns:260px 1fr; min-height:100dvh; width:min(calc(100% - 16px),1420px); margin:0 auto; }
+    .dash-sidebar { position:sticky; top:0; height:100dvh; padding:22px 16px 22px 0; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+    .sidebar-brand { display:flex; align-items:center; gap:12px; padding:16px 14px; margin-bottom:8px; text-decoration:none; }
+    .sidebar-brand-icon { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:14px; background:linear-gradient(145deg,rgba(0,212,170,.22),rgba(79,124,255,.12)),rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+    .sidebar-brand-text strong { display:block; font-size:15px; color:#ebf2ff; }
+    .sidebar-brand-text span { font-size:12px; color:rgba(235,242,255,.44); }
+    .sidebar-section-label { padding:10px 14px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:rgba(235,242,255,.32); }
+    .sidebar-nav-item { display:flex; align-items:center; gap:12px; min-height:44px; padding:0 14px; border-radius:16px; font-size:14px; color:rgba(235,242,255,.62); text-decoration:none; transition:background .2s ease,color .2s ease; }
+    .sidebar-nav-item:hover { background:rgba(255,255,255,.04); color:#ebf2ff; }
+    .sidebar-nav-item.active { background:linear-gradient(160deg,rgba(0,212,170,.13),rgba(79,124,255,.08)); border:1px solid rgba(0,212,170,.15); color:#f3fbff; }
+    .sidebar-nav-icon { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:10px; background:rgba(255,255,255,.04); font-size:15px; flex-shrink:0; }
+
+    .dash-main { padding:24px 0 60px 24px; display:grid; gap:22px; align-content:start; }
+    .page-topbar { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+    .page-heading { margin:0; font-size:22px; font-weight:700; letter-spacing:-.03em; color:#ebf2ff; }
+
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+    .kpi-tile { padding:20px; border-radius:22px; background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.08); display:grid; gap:8px; }
+    .kpi-tile-label { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:rgba(235,242,255,.42); }
+    .kpi-tile-value { font-size:clamp(22px,2vw,28px); font-weight:800; letter-spacing:-.04em; color:#ebf2ff; font-variant-numeric:tabular-nums; }
+    .kpi-tile-sub { font-size:13px; color:rgba(235,242,255,.5); }
+    .positive { color:#59e59a; }
+    .negative { color:#ff6b81; }
+
+    .chart-grid { display:grid; grid-template-columns:1.4fr 1fr; gap:18px; }
+    .panel { padding:22px; border-radius:28px; background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.08); }
+    .panel-title { margin:0 0 16px; font-size:16px; font-weight:700; color:#ebf2ff; }
+    .chart-box { height:300px; }
+    .chart-box.small { height:240px; }
+
+    .metrics-table { width:100%; border-collapse:collapse; }
+    .metrics-table th, .metrics-table td { padding:12px 14px; text-align:left; font-size:14px; border-bottom:1px solid rgba(255,255,255,.05); }
+    .metrics-table th { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:rgba(235,242,255,.36); }
+    .metrics-table td { color:rgba(235,242,255,.8); }
+    .status-good { color:#59e59a; }
+    .status-high { color:#ffd166; }
+    .status-excellent { color:#8fb0ff; }
+
+    @media (max-width:1100px) {
+      .kpi-grid, .chart-grid { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:860px) {
+      .dash-layout { grid-template-columns:1fr; }
+      .dash-sidebar { position:static; height:auto; flex-direction:row; flex-wrap:wrap; padding:14px 0; gap:4px; overflow-x:auto; }
+      .sidebar-section-label, .sidebar-brand-text { display:none; }
+      .sidebar-nav-item { flex-direction:column; gap:4px; height:52px; padding:0 12px; font-size:11px; min-height:auto; }
+      .dash-main { padding:0 0 40px; }
+      .kpi-grid, .chart-grid { grid-template-columns:1fr; }
+    }
+  </style>
 </head>
-<body class="app-body">
-<div class="aurora"></div>
-<canvas id="particleCanvas"></canvas>
+<body>
+  <canvas id="particleCanvas" class="particle-canvas" aria-hidden="true"></canvas>
 
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
-  <nav class="sidebar-nav">
-    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
-    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
-    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
-    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
-    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
-    <a href="analytics.html" class="nav-item active"><span>&#128202;</span> Analytics</a>
-  </nav>
-  <div class="sidebar-bottom">
-    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
-  </div>
-</aside>
+  <div class="dash-layout">
+    <aside class="dash-sidebar" role="navigation" aria-label="App navigation">
+      <a href="index.html" class="sidebar-brand" aria-label="NexVault home">
+        <div class="sidebar-brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <polygon points="11,2 20,7 20,15 11,20 2,15 2,7" stroke="#00d4aa" stroke-width="1.5" fill="none"/>
+            <polygon points="11,6 16,9 16,14 11,17 6,14 6,9" fill="rgba(0,212,170,0.18)" stroke="#4f7cff" stroke-width="1"/>
+            <circle cx="11" cy="11" r="2.5" fill="#00d4aa"/>
+          </svg>
+        </div>
+        <div class="sidebar-brand-text"><strong>NexVault</strong><span>Universal</span></div>
+      </a>
 
-<main class="main-content">
-  <header class="topbar">
-    <div class="topbar-left">
-      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
-      <h1 class="page-title">Analytics</h1>
-    </div>
-    <div class="topbar-right">
-      <div class="period-tabs">
-        <button class="period-tab active" onclick="setPeriod('30d',this)">30D</button>
-        <button class="period-tab" onclick="setPeriod('90d',this)">90D</button>
-        <button class="period-tab" onclick="setPeriod('1y',this)">1Y</button>
-        <button class="period-tab" onclick="setPeriod('all',this)">All</button>
+      <p class="sidebar-section-label">Portfolio</p>
+      <a href="dashboard.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">⬡</span>Dashboard</a>
+      <a href="tokens.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">◈</span>Tokens</a>
+      <a href="nft.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">🖼</span>NFTs</a>
+      <a href="transactions.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">⚡</span>Transactions</a>
+      <a href="analytics.html" class="sidebar-nav-item active" aria-current="page"><span class="sidebar-nav-icon">📊</span>Analytics</a>
+      <p class="sidebar-section-label">Settings</p>
+      <a href="wallet.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">🔗</span>Wallets</a>
+    </aside>
+
+    <main class="dash-main" id="main-content">
+      <div class="page-topbar">
+        <h1 class="page-heading">Analytics</h1>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="topbar-wallet" data-wallet-trigger role="button" tabindex="0" aria-label="Wallet status" style="cursor:pointer;">
+            <span>Connect Wallet</span>
+          </div>
+          <button class="btn btn-primary" style="height:40px;padding:0 18px;border-radius:14px;font-size:14px;" onclick="initAnalytics()">↻</button>
+        </div>
       </div>
-    </div>
-  </header>
 
-  <!-- KPI CARDS -->
-  <section class="kpi-grid">
-    <div class="kpi-card reveal"><div class="kpi-label">Portfolio Value</div><div class="kpi-value">$284,719</div><div class="kpi-change positive">+4.82%</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Total PnL</div><div class="kpi-value positive">+$94,220</div><div class="kpi-change positive">+49.5%</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Best Month</div><div class="kpi-value positive">Mar +28.4%</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Worst Month</div><div class="kpi-value negative">Jun -12.1%</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Sharpe Ratio</div><div class="kpi-value">2.14</div><div class="kpi-change">Good</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Max Drawdown</div><div class="kpi-value negative">-18.2%</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Win Rate</div><div class="kpi-value positive">68%</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Avg Hold Time</div><div class="kpi-value">47 days</div></div>
-  </section>
+      <div id="trustBar" role="complementary" aria-label="Security indicators"></div>
 
-  <!-- CHARTS ROW 1 -->
-  <section class="charts-row">
-    <div class="chart-card">
-      <div class="chart-header"><h3>Portfolio vs BTC vs ETH</h3></div>
-      <canvas id="compareChart" height="120"></canvas>
-    </div>
-    <div class="chart-card chart-card-sm">
-      <div class="chart-header"><h3>Monthly PnL</h3></div>
-      <canvas id="pnlChart" height="180"></canvas>
-    </div>
-  </section>
+      <section class="kpi-grid" aria-label="Analytics KPIs">
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Portfolio Value</div>
+          <div class="kpi-tile-value">$284,719</div>
+          <div class="kpi-tile-sub positive">+4.82%</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Total PnL</div>
+          <div class="kpi-tile-value">+$94,220</div>
+          <div class="kpi-tile-sub positive">+49.5%</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Best Month</div>
+          <div class="kpi-tile-value">Mar +28.4%</div>
+          <div class="kpi-tile-sub">Strongest monthly return</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Worst Month</div>
+          <div class="kpi-tile-value negative">Jun -12.1%</div>
+          <div class="kpi-tile-sub">Largest pullback</div>
+        </div>
+      </section>
 
-  <!-- CHARTS ROW 2 -->
-  <section class="charts-row">
-    <div class="chart-card">
-      <div class="chart-header"><h3>Chain Distribution</h3></div>
-      <canvas id="chainChart" height="120"></canvas>
-    </div>
-    <div class="chart-card chart-card-sm">
-      <div class="chart-header"><h3>Asset Allocation</h3></div>
-      <canvas id="allocChart" height="180"></canvas>
-    </div>
-  </section>
+      <section class="kpi-grid" aria-label="Risk KPIs">
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Sharpe Ratio</div>
+          <div class="kpi-tile-value">2.14</div>
+          <div class="kpi-tile-sub status-good">Good</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Max Drawdown</div>
+          <div class="kpi-tile-value negative">-18.2%</div>
+          <div class="kpi-tile-sub">Controlled downside</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Win Rate</div>
+          <div class="kpi-tile-value">68%</div>
+          <div class="kpi-tile-sub">Profitable periods</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Avg Hold Time</div>
+          <div class="kpi-tile-value">47 days</div>
+          <div class="kpi-tile-sub">Position duration</div>
+        </div>
+      </section>
 
-  <!-- RISK TABLE -->
-  <section class="table-card">
-    <div class="table-header"><h3>Risk Metrics</h3></div>
-    <table class="data-table">
-      <thead><tr><th>Metric</th><th>Value</th><th>Benchmark</th><th>Status</th></tr></thead>
-      <tbody>
-        <tr><td>Sharpe Ratio</td><td>2.14</td><td>&gt;1.0</td><td><span class="badge badge-success">Excellent</span></td></tr>
-        <tr><td>Sortino Ratio</td><td>3.02</td><td>&gt;2.0</td><td><span class="badge badge-success">Excellent</span></td></tr>
-        <tr><td>Max Drawdown</td><td>-18.2%</td><td>&lt;25%</td><td><span class="badge badge-success">Good</span></td></tr>
-        <tr><td>Volatility (30D)</td><td>24.8%</td><td>&lt;30%</td><td><span class="badge badge-success">Good</span></td></tr>
-        <tr><td>Beta (vs BTC)</td><td>1.24</td><td>~1.0</td><td><span class="badge badge-warning">High</span></td></tr>
-        <tr><td>Correlation (BTC)</td><td>0.82</td><td>&lt;0.9</td><td><span class="badge badge-success">Good</span></td></tr>
-        <tr><td>Win Rate</td><td>68%</td><td>&gt;55%</td><td><span class="badge badge-success">Good</span></td></tr>
-        <tr><td>Avg Gain/Loss Ratio</td><td>2.1x</td><td>&gt;1.5x</td><td><span class="badge badge-success">Good</span></td></tr>
-      </tbody>
-    </table>
-  </section>
-</main>
+      <section class="chart-grid">
+        <div class="panel reveal">
+          <h2 class="panel-title">Portfolio vs BTC vs ETH</h2>
+          <div class="chart-box"><canvas id="benchmarkChart" role="img" aria-label="Portfolio benchmark comparison chart"></canvas></div>
+        </div>
+        <div class="panel reveal">
+          <h2 class="panel-title">Monthly PnL</h2>
+          <div class="chart-box"><canvas id="monthlyPnlChart" role="img" aria-label="Monthly PnL bar chart"></canvas></div>
+        </div>
+      </section>
 
-<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
-    <div class="wallet-grid" id="walletGrid"></div>
+      <section class="chart-grid">
+        <div class="panel reveal">
+          <h2 class="panel-title">Chain Distribution</h2>
+          <div class="chart-box small"><canvas id="chainDistChart" role="img" aria-label="Chain distribution chart"></canvas></div>
+        </div>
+        <div class="panel reveal">
+          <h2 class="panel-title">Asset Allocation</h2>
+          <div class="chart-box small"><canvas id="assetAllocChart" role="img" aria-label="Asset allocation chart"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel reveal">
+        <h2 class="panel-title">Risk Metrics</h2>
+        <table class="metrics-table" aria-label="Risk metrics table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+              <th>Benchmark</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Sharpe Ratio</td><td>2.14</td><td>&gt;1.0</td><td class="status-excellent">Excellent</td></tr>
+            <tr><td>Sortino Ratio</td><td>3.02</td><td>&gt;2.0</td><td class="status-excellent">Excellent</td></tr>
+            <tr><td>Max Drawdown</td><td>-18.2%</td><td>&lt;25%</td><td class="status-good">Good</td></tr>
+            <tr><td>Volatility (30D)</td><td>24.8%</td><td>&lt;30%</td><td class="status-good">Good</td></tr>
+            <tr><td>Beta (vs BTC)</td><td>1.24</td><td>~1.0</td><td class="status-high">High</td></tr>
+            <tr><td>Correlation (BTC)</td><td>0.82</td><td>&lt;0.9</td><td class="status-good">Good</td></tr>
+            <tr><td>Win Rate</td><td>68%</td><td>&gt;55%</td><td class="status-good">Good</td></tr>
+            <tr><td>Avg Gain/Loss Ratio</td><td>2.1x</td><td>&gt;1.5x</td><td class="status-good">Good</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
   </div>
-</div>
 
-<nav class="mobile-nav">
-  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
-  <a href="wallet.html" class="mobile-nav-item">&#128179;</a>
-  <a href="tokens.html" class="mobile-nav-item">&#128176;</a>
-  <a href="nft.html" class="mobile-nav-item">&#128444;</a>
-  <a href="analytics.html" class="mobile-nav-item active">&#128202;</a>
-</nav>
+  <div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<div class="toast-container" id="toastContainer"></div>
+  <div id="walletModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title" id="walletModalTitle">Connect Wallet</h2>
+          <p class="modal-subtitle">Select your chain family, then choose a wallet</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('walletModal')" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 2l14 14M16 2L2 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="wallet-family-tabs" role="tablist" aria-label="Chain family">
+        <button type="button" class="wallet-family-tab active" data-wallet-family="evm" role="tab" aria-selected="true">EVM</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="solana" role="tab" aria-selected="false">Solana</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="bitcoin" role="tab" aria-selected="false">Bitcoin</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="tron" role="tab" aria-selected="false">TRON</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="ton" role="tab" aria-selected="false">TON</button>
+      </div>
+      <div id="walletGrid" class="wallet-grid" role="tabpanel"></div>
+      <div id="walletConnectStatus" class="wallet-connect-status" role="status" aria-live="polite">Choose a wallet to continue</div>
+    </div>
+  </div>
 
-<script src="config.js"></script>
-<script src="assets/js/animations.js"></script>
-<script src="assets/js/wallet.js"></script>
-<script src="assets/js/charts.js"></script>
-<script src="assets/js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  initParticles('particleCanvas');
-  initScrollReveal();
+  <script src="config.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/wallet.js"></script>
 
-  // Compare chart
-  const compareCtx = document.getElementById('compareChart');
-  const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  new Chart(compareCtx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {label:'Portfolio', data:[100,112,144,138,151,133,158,172,165,184,201,215], borderColor:'#00f5d4', backgroundColor:'rgba(0,245,212,0.08)', tension:0.4, fill:true},
-        {label:'BTC', data:[100,108,128,121,135,118,142,154,148,162,178,190], borderColor:'#f7931a', backgroundColor:'transparent', tension:0.4},
-        {label:'ETH', data:[100,115,140,130,148,128,155,168,160,178,196,210], borderColor:'#627eea', backgroundColor:'transparent', tension:0.4},
-      ]
-    },
-    options:{responsive:true, plugins:{legend:{labels:{color:'#a8b2c1'}}}, scales:{x:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}}}
-  });
+  <script>
+    let benchmarkChart, monthlyPnlChart, chainDistChart, assetAllocChart;
 
-  // PnL bar chart
-  const pnlCtx = document.getElementById('pnlChart');
-  const pnlData = [12,8,28,-4,13,-12,18,14,-5,19,17,9];
-  new Chart(pnlCtx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'PnL %',
-        data: pnlData,
-        backgroundColor: pnlData.map(v => v >= 0 ? 'rgba(0,245,212,0.7)' : 'rgba(239,68,68,0.7)'),
-        borderRadius: 4,
-      }]
-    },
-    options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}}}
-  });
+    function destroyCharts() {
+      [benchmarkChart, monthlyPnlChart, chainDistChart, assetAllocChart].forEach(c => c && c.destroy());
+    }
 
-  // Chain dist
-  const chainCtx = document.getElementById('chainChart');
-  new Chart(chainCtx, {
-    type: 'bar',
-    data: {
-      labels: ['Ethereum','Solana','Bitcoin','Arbitrum','Polygon','BNB'],
-      datasets: [{label:'Value $', data:[198442,47661,38616,15376,6888,4950], backgroundColor:['#627eea','#9945ff','#f7931a','#12aaff','#8247e5','#f0b90b'], borderRadius:4}]
-    },
-    options:{indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'#a8b2c1'}, grid:{color:'rgba(255,255,255,0.05)'}}}}
-  });
+    function initAnalytics() {
+      destroyCharts();
+      if (!window.Chart) return;
 
-  // Alloc donut
-  const allocCtx = document.getElementById('allocChart');
-  new Chart(allocCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['ETH','BTC','SOL','USDC','ARB','Others'],
-      datasets: [{data:[47.9,24.2,13.4,9.1,5.4,100], backgroundColor:['#627eea','#f7931a','#9945ff','#2775ca','#12aaff','#00f5d4'], borderWidth:0}]
-    },
-    options:{cutout:'72%', responsive:true, plugins:{legend:{position:'right', labels:{color:'#a8b2c1', padding:12}}}}
-  });
-});
+      benchmarkChart = new Chart(document.getElementById("benchmarkChart"), {
+        type: "line",
+        data: {
+          labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+          datasets: [
+            { label: "Portfolio", data: [100,112,138,142,151,133,149,162,178,191,204,221], borderColor: "#00d4aa", backgroundColor: "rgba(0,212,170,.08)", fill: true, tension: .35, pointRadius: 0 },
+            { label: "BTC", data: [100,108,129,134,141,128,139,147,160,172,185,196], borderColor: "#F7931A", tension: .35, pointRadius: 0 },
+            { label: "ETH", data: [100,110,134,139,148,126,145,158,171,183,194,208], borderColor: "#627EEA", tension: .35, pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "rgba(235,242,255,.72)" } } },
+          scales: {
+            x: { ticks: { color: "rgba(235,242,255,.45)" }, grid: { color: "rgba(255,255,255,.05)" } },
+            y: { ticks: { color: "rgba(235,242,255,.45)" }, grid: { color: "rgba(255,255,255,.05)" } }
+          }
+        }
+      });
 
-function setPeriod(period, btn) {
-  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-</script>
+      monthlyPnlChart = new Chart(document.getElementById("monthlyPnlChart"), {
+        type: "bar",
+        data: {
+          labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+          datasets: [{
+            label: "Monthly PnL %",
+            data: [8.2,12.6,28.4,6.8,4.1,-12.1,9.4,7.7,10.2,5.4,6.8,8.1],
+            backgroundColor: ["#59e59a","#59e59a","#59e59a","#59e59a","#59e59a","#ff6b81","#59e59a","#59e59a","#59e59a","#59e59a","#59e59a","#59e59a"]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: "rgba(235,242,255,.45)" }, grid: { display: false } },
+            y: { ticks: { color: "rgba(235,242,255,.45)" }, grid: { color: "rgba(255,255,255,.05)" } }
+          }
+        }
+      });
+
+      chainDistChart = new Chart(document.getElementById("chainDistChart"), {
+        type: "doughnut",
+        data: {
+          labels: ["Ethereum","Solana","Arbitrum","Bitcoin","Polygon"],
+          datasets: [{
+            data: [46,18,14,15,7],
+            backgroundColor: ["#627EEA","#14F195","#28A0F0","#F7931A","#8247E5"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "rgba(235,242,255,.72)" } } }
+        }
+      });
+
+      assetAllocChart = new Chart(document.getElementById("assetAllocChart"), {
+        type: "polarArea",
+        data: {
+          labels: ["ETH","BTC","SOL","USDC","ARB","Others"],
+          datasets: [{
+            data: [48,24,13,9,4,2],
+            backgroundColor: ["rgba(98,126,234,.8)","rgba(247,147,26,.8)","rgba(20,241,149,.8)","rgba(39,117,202,.8)","rgba(40,160,240,.8)","rgba(255,255,255,.18)"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "rgba(235,242,255,.72)" } } },
+          scales: { r: { grid: { color: "rgba(255,255,255,.06)" }, ticks: { display: false } } }
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", initAnalytics);
+  </script>
 </body>
 </html>
