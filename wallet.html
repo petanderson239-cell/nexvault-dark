@@ -1,169 +1,210 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Wallets — NexVault</title>
+  <meta name="description" content="Manage and connect your crypto wallets across 50+ blockchains." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/animations.css" />
+  <style>
+    .wallet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    .wallet-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; transition: all .3s; cursor: pointer; position: relative; overflow: hidden; }
+    .wallet-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,255,163,.12); }
+    .wallet-card.connected { border-color: var(--accent); }
+    .wallet-card.connected::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg,var(--accent),var(--accent2)); }
+    .wallet-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .wallet-name { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
+    .wallet-sub { font-size: .8rem; color: var(--muted); margin-bottom: 1rem; }
+    .wallet-address { font-family: monospace; font-size: .8rem; color: var(--accent); background: rgba(0,255,163,.08); padding: .35rem .75rem; border-radius: 8px; margin-bottom: 1rem; word-break: break-all; }
+    .wallet-balance { font-size: 1.4rem; font-weight: 700; color: var(--text); margin-bottom: .25rem; }
+    .wallet-chains { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .75rem; }
+    .chain-badge { font-size: .7rem; padding: .2rem .55rem; border-radius: 20px; background: rgba(255,255,255,.07); color: var(--muted); border: 1px solid var(--border); }
+    .wallet-actions { display: flex; gap: .75rem; margin-top: 1.25rem; }
+    .connect-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); z-index:1000; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:.3s; }
+    .connect-modal-overlay.open { opacity:1; pointer-events:all; }
+    .connect-modal { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2rem; width:100%; max-width:480px; }
+    .connect-modal h3 { font-size:1.3rem; font-weight:700; margin-bottom:1.5rem; }
+    .wallet-option { display:flex; align-items:center; gap:1rem; padding:1rem; border-radius:12px; border:1px solid var(--border); cursor:pointer; margin-bottom:.75rem; transition:.25s; }
+    .wallet-option:hover { border-color:var(--accent); background:rgba(0,255,163,.06); }
+    .wallet-option-icon { font-size:1.8rem; }
+    .wallet-option-info .name { font-weight:600; font-size:.95rem; }
+    .wallet-option-info .sub { font-size:.8rem; color:var(--muted); }
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.25rem; }
+    .stat-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.4rem; }
+    .stat-value { font-size:1.5rem; font-weight:700; color:var(--text); }
+    .stat-value.green { color:var(--accent); }
+  </style>
 </head>
 <body class="app-body">
-<div class="aurora"></div>
-<canvas id="particleCanvas"></canvas>
+  <div class="aurora"></div>
+  <canvas id="particleCanvas"></canvas>
 
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
-  <nav class="sidebar-nav">
-    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
-    <a href="wallet.html" class="nav-item active"><span>&#128179;</span> Wallets</a>
-    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
-    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
-    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
-    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
-  </nav>
-  <div class="sidebar-bottom">
-    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
-  </div>
-</aside>
-
-<main class="main-content">
-  <header class="topbar">
-    <div class="topbar-left">
-      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
-      <h1 class="page-title">Wallets</h1>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
+      <a href="wallet.html" class="nav-item active"><span>&#128179;</span> Wallets</a>
+      <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
+      <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
+      <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
+      <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="index.html" class="nav-item"><span>&#127968;</span> Home</a>
     </div>
-    <div class="topbar-right">
-      <button class="btn btn-primary btn-sm" onclick="openModal('walletModal')">+ Add Wallet</button>
-    </div>
-  </header>
+  </aside>
 
-  <!-- WALLET STATS -->
-  <section class="kpi-grid">
-    <div class="kpi-card reveal"><div class="kpi-label">Total Balance</div><div class="kpi-value">$284,719.40</div><div class="kpi-change positive">+4.82%</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Wallets</div><div class="kpi-value">3</div><div class="kpi-change">Active</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Chains</div><div class="kpi-value">5</div><div class="kpi-change">ETH, SOL, BNB, ARB, MATIC</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">NFTs</div><div class="kpi-value">9</div><div class="kpi-change">Across 3 collections</div></div>
-  </section>
-
-  <!-- WALLET CARDS -->
-  <section class="wallet-cards-grid">
-
-    <!-- MetaMask -->
-    <div class="wallet-detail-card tilt-card reveal">
-      <div class="wdc-header">
-        <div class="wdc-icon">&#129418;</div>
-        <div class="wdc-info">
-          <h3>MetaMask</h3>
-          <span class="badge badge-success">Active</span>
-        </div>
-        <div class="wdc-actions">
-          <button class="btn btn-outline btn-xs" onclick="copyAddr('0x1a2b...3c4d')">Copy</button>
-          <button class="btn btn-danger btn-xs">Disconnect</button>
-        </div>
+  <!-- Main -->
+  <main class="main-content">
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Wallets</h1>
+        <p class="page-subtitle">Manage your connected wallets across all chains</p>
       </div>
-      <div class="wdc-address">0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b</div>
-      <div class="wdc-balance">$198,442.00</div>
-      <div class="wdc-holdings">
-        <div class="wdc-holding-row"><span>ETH</span><span>42.5</span><span>$136,446</span></div>
-        <div class="wdc-holding-row"><span>WBTC</span><span>0.32</span><span>$21,574</span></div>
-        <div class="wdc-holding-row"><span>USDC</span><span>25,846</span><span>$25,846</span></div>
-        <div class="wdc-holding-row"><span>LINK</span><span>840</span><span>$14,576</span></div>
+      <button class="btn btn-primary" onclick="openConnectModal()">+ Connect Wallet</button>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Portfolio</div>
+        <div class="stat-value">$284,719.40</div>
       </div>
-      <div class="wdc-chain-dist">
-        <div class="chain-dist-label"><span>Ethereum</span><span>95.2%</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:95.2%"></div></div>
-        <div class="chain-dist-label"><span>Arbitrum</span><span>4.8%</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:4.8%"></div></div>
+      <div class="stat-card">
+        <div class="stat-label">Connected Wallets</div>
+        <div class="stat-value green" id="walletCount">3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Chains</div>
+        <div class="stat-value">12</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">24h Change</div>
+        <div class="stat-value green">+4.82%</div>
       </div>
     </div>
 
-    <!-- Phantom -->
-    <div class="wallet-detail-card tilt-card reveal">
-      <div class="wdc-header">
-        <div class="wdc-icon">&#128123;</div>
-        <div class="wdc-info">
-          <h3>Phantom</h3>
-          <span class="badge badge-info">Synced</span>
-        </div>
-        <div class="wdc-actions">
-          <button class="btn btn-outline btn-xs" onclick="copyAddr('7xKp...mN2q')">Copy</button>
-          <button class="btn btn-danger btn-xs">Disconnect</button>
-        </div>
-      </div>
-      <div class="wdc-address">7xKpQmN2qR9sT3uV4wX5yZ6aB7cD8eF9gH0iJ1kL2m</div>
-      <div class="wdc-balance">$47,661.00</div>
-      <div class="wdc-holdings">
-        <div class="wdc-holding-row"><span>SOL</span><span>210</span><span>$38,283</span></div>
-        <div class="wdc-holding-row"><span>JTO</span><span>2,100</span><span>$9,378</span></div>
-      </div>
-      <div class="wdc-chain-dist">
-        <div class="chain-dist-label"><span>Solana</span><span>100%</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
-      </div>
+    <!-- Wallet Cards -->
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 class="section-title">Connected Wallets</h2>
+      <span id="walletCountLabel" style="color:var(--muted);font-size:.85rem;">3 wallets</span>
     </div>
-
-    <!-- Ledger -->
-    <div class="wallet-detail-card tilt-card reveal">
-      <div class="wdc-header">
-        <div class="wdc-icon">&#128274;</div>
-        <div class="wdc-info">
-          <h3>Ledger Hardware</h3>
-          <span class="badge badge-warning">Cold</span>
-        </div>
-        <div class="wdc-actions">
-          <button class="btn btn-outline btn-xs" onclick="copyAddr('0x9f8e...7d6c')">Copy</button>
-          <button class="btn btn-danger btn-xs">Remove</button>
-        </div>
-      </div>
-      <div class="wdc-address">0x9f8e7d6c5b4a39281726354433221100ffeeddcc</div>
-      <div class="wdc-balance">$38,616.40</div>
-      <div class="wdc-holdings">
-        <div class="wdc-holding-row"><span>BTC</span><span>0.52</span><span>$35,058</span></div>
-        <div class="wdc-holding-row"><span>ETH</span><span>1.0</span><span>$3,210</span></div>
-        <div class="wdc-holding-row"><span>AVAX</span><span>10</span><span>$348</span></div>
-      </div>
-      <div class="wdc-chain-dist">
-        <div class="chain-dist-label"><span>Bitcoin</span><span>90.8%</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:90.8%"></div></div>
-        <div class="chain-dist-label"><span>Ethereum</span><span>8.3%</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:8.3%"></div></div>
-      </div>
-    </div>
-
-  </section>
-</main>
-
-<nav class="mobile-nav">
-  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
-  <a href="wallet.html" class="mobile-nav-item active">&#128179;</a>
-  <a href="tokens.html" class="mobile-nav-item">&#128176;</a>
-  <a href="nft.html" class="mobile-nav-item">&#128444;</a>
-  <a href="analytics.html" class="mobile-nav-item">&#128202;</a>
-</nav>
-
-<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
     <div class="wallet-grid" id="walletGrid"></div>
+  </main>
+
+  <!-- Connect Modal -->
+  <div class="connect-modal-overlay" id="connectModal" onclick="closeConnectModal(event)">
+    <div class="connect-modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <h3>Connect a Wallet</h3>
+        <button onclick="closeConnectModal()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;">&times;</button>
+      </div>
+      <div id="walletOptions"></div>
+    </div>
   </div>
-</div>
 
-<div class="toast-container" id="toastContainer"></div>
+  <script src="config.js"></script>
+  <script src="assets/js/animations.js"></script>
+  <script src="assets/js/wallet.js"></script>
+  <script>
+    const DEMO_WALLETS = [
+      {
+        id: 'w1', name: 'MetaMask', icon: '\uD83E\uDD8A', type: 'MetaMask',
+        address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+        ens: 'vitalik.eth', balance: '$192,400.10',
+        chains: ['Ethereum','Polygon','Arbitrum','Optimism','Base'],
+        connected: true,
+      },
+      {
+        id: 'w2', name: 'Phantom', icon: '\uD83D\uDC7B', type: 'Phantom',
+        address: 'DYw8jCTfwHNRJhhmFcbXvVDTqWMEVFBX6ZKUmG5CNSKH',
+        ens: null, balance: '$58,210.80',
+        chains: ['Solana','Ethereum'],
+        connected: true,
+      },
+      {
+        id: 'w3', name: 'Ledger', icon: '\uD83D\uDD12', type: 'Ledger Hardware',
+        address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+        ens: null, balance: '$34,108.50',
+        chains: ['Ethereum','Bitcoin','Solana','Polygon'],
+        connected: true,
+      },
+    ];
 
-<script src="config.js"></script>
-<script src="assets/js/animations.js"></script>
-<script src="assets/js/wallet.js"></script>
-<script src="assets/js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  initParticles('particleCanvas');
-  initTilt();
-  initScrollReveal();
-});
-function copyAddr(addr) {
-  navigator.clipboard.writeText(addr);
-  showToast('Address copied!', 'success');
-}
-</script>
+    function renderWallets() {
+      const grid = document.getElementById('walletGrid');
+      grid.innerHTML = DEMO_WALLETS.map(w => `
+        <div class="wallet-card ${w.connected ? 'connected' : ''}">
+          <div class="wallet-icon">${w.icon}</div>
+          <div class="wallet-name">${w.name}</div>
+          <div class="wallet-sub">${w.type}</div>
+          ${w.ens ? `<div class="wallet-address">${w.ens}</div>` : ''}
+          <div class="wallet-address">${w.address.slice(0,8)}...${w.address.slice(-6)}</div>
+          <div class="wallet-balance">${w.balance}</div>
+          <div class="wallet-chains">${w.chains.map(c => `<span class="chain-badge">${c}</span>`).join('')}</div>
+          <div class="wallet-actions">
+            <button class="btn btn-sm" onclick="copyAddress('${w.address}')">Copy Address</button>
+            <button class="btn btn-outline btn-sm" onclick="disconnectWallet('${w.id}')">Disconnect</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderWalletOptions() {
+      const opts = document.getElementById('walletOptions');
+      const wallets = CONFIG.WALLETS;
+      opts.innerHTML = wallets.map(w => `
+        <div class="wallet-option" onclick="connectWallet('${w.id}')">
+          <div class="wallet-option-icon">${w.icon}</div>
+          <div class="wallet-option-info">
+            <div class="name">${w.name}</div>
+            <div class="sub">${w.sub}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openConnectModal() {
+      document.getElementById('connectModal').classList.add('open');
+    }
+    function closeConnectModal(e) {
+      if (!e || e.target === document.getElementById('connectModal')) {
+        document.getElementById('connectModal').classList.remove('open');
+      }
+    }
+    function connectWallet(id) {
+      closeConnectModal();
+      const w = CONFIG.WALLETS.find(x => x.id === id);
+      if (w) showToast(`Connecting to ${w.name}...`);
+    }
+    function disconnectWallet(id) {
+      const idx = DEMO_WALLETS.findIndex(w => w.id === id);
+      if (idx > -1) { DEMO_WALLETS.splice(idx, 1); renderWallets(); updateCount(); }
+    }
+    function copyAddress(addr) {
+      navigator.clipboard.writeText(addr).then(() => showToast('Address copied!'));
+    }
+    function updateCount() {
+      const n = DEMO_WALLETS.length;
+      document.getElementById('walletCount').textContent = n;
+      document.getElementById('walletCountLabel').textContent = n + ' wallet' + (n !== 1 ? 's' : '');
+    }
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      Object.assign(t.style, { position:'fixed', bottom:'2rem', right:'2rem', background:'var(--accent)', color:'#000', padding:'.75rem 1.5rem', borderRadius:'10px', fontWeight:'700', zIndex:'9999', transition:'.3s' });
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    renderWallets();
+    renderWalletOptions();
+  </script>
 </body>
 </html>
