@@ -1,76 +1,99 @@
 // NexVault Dark — Central Configuration
+
 const CONFIG = {
   APP_NAME: 'NexVault',
-  VERSION: '1.0.0',
+  VERSION: '2.0.0',
   THEME: 'dark',
   CURRENCY: 'USD',
   REFRESH_INTERVAL: 30000,
 
   CHAINS: [
-    { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', color: '#627EEA', rpc: 'https://eth.llamarpc.com' },
-    { id: 'solana', name: 'Solana', symbol: 'SOL', color: '#14F195', rpc: 'https://api.mainnet-beta.solana.com' },
-    { id: 'polygon', name: 'Polygon', symbol: 'MATIC', color: '#8247E5', rpc: 'https://polygon-rpc.com' },
-    { id: 'bnb', name: 'BNB Chain', symbol: 'BNB', color: '#F7931A', rpc: 'https://bsc-dataseed.binance.org' },
-    { id: 'arbitrum', name: 'Arbitrum', symbol: 'ARB', color: '#28A0F0', rpc: 'https://arb1.arbitrum.io/rpc' },
+    { id: 'ethereum',  name: 'Ethereum',  symbol: 'ETH',   color: '#627EEA', rpc: 'https://eth.llamarpc.com',             explorer: 'https://etherscan.io',         chainId: 1 },
+    { id: 'solana',    name: 'Solana',    symbol: 'SOL',   color: '#14F195', rpc: 'https://api.mainnet-beta.solana.com', explorer: 'https://solscan.io',            chainId: null },
+    { id: 'polygon',   name: 'Polygon',   symbol: 'MATIC', color: '#8247E5', rpc: 'https://polygon-rpc.com',             explorer: 'https://polygonscan.com',       chainId: 137 },
+    { id: 'bnb',       name: 'BNB Chain', symbol: 'BNB',   color: '#F7931A', rpc: 'https://bsc-dataseed.binance.org',    explorer: 'https://bscscan.com',           chainId: 56 },
+    { id: 'arbitrum',  name: 'Arbitrum',  symbol: 'ARB',   color: '#28A0F0', rpc: 'https://arb1.arbitrum.io/rpc',        explorer: 'https://arbiscan.io',           chainId: 42161 },
+    { id: 'optimism',  name: 'Optimism',  symbol: 'OP',    color: '#FF0420', rpc: 'https://mainnet.optimism.io',         explorer: 'https://optimistic.etherscan.io', chainId: 10 },
+    { id: 'avalanche', name: 'Avalanche', symbol: 'AVAX',  color: '#E84142', rpc: 'https://api.avax.network/ext/bc/C/rpc', explorer: 'https://snowtrace.io',         chainId: 43114 },
+    { id: 'base',      name: 'Base',      symbol: 'ETH',   color: '#0052FF', rpc: 'https://mainnet.base.org',            explorer: 'https://basescan.org',          chainId: 8453 },
+    { id: 'fantom',    name: 'Fantom',    symbol: 'FTM',   color: '#1969FF', rpc: 'https://rpc.ftm.tools',               explorer: 'https://ftmscan.com',           chainId: 250 },
+    { id: 'zksync',    name: 'zkSync',    symbol: 'ETH',   color: '#4E529A', rpc: 'https://mainnet.era.zksync.io',       explorer: 'https://explorer.zksync.io',    chainId: 324 },
   ],
 
   WALLETS: [
-    { id: 'metamask', name: 'MetaMask', sub: 'Browser Extension', chains: ['ethereum','polygon','bnb','arbitrum'] },
-    { id: 'phantom', name: 'Phantom', sub: 'Solana & EVM', chains: ['solana','ethereum'] },
-    { id: 'ledger', name: 'Ledger', sub: 'Hardware Wallet', chains: ['ethereum','solana','polygon','bnb','arbitrum'] },
-    { id: 'walletconnect', name: 'WalletConnect', sub: 'QR Code Scan', chains: ['ethereum','polygon','bnb','arbitrum'] },
-    { id: 'rabby', name: 'Rabby', sub: 'Multi-chain Smart Wallet', chains: ['ethereum','polygon','bnb','arbitrum'] },
-    { id: 'coinbase', name: 'Coinbase Wallet', sub: 'Mobile & Extension', chains: ['ethereum','polygon','bnb'] },
-    { id: 'trust', name: 'Trust Wallet', sub: 'Mobile Wallet', chains: ['ethereum','solana','bnb','polygon'] },
-    { id: 'okx', name: 'OKX Wallet', sub: 'Multi-chain', chains: ['ethereum','solana','polygon','bnb','arbitrum'] },
+    { id: 'metamask',     name: 'MetaMask',     sub: 'Browser Extension', chains: ['ethereum','polygon','bnb','arbitrum','optimism','avalanche','base','fantom','zksync'], icon: '🦊' },
+    { id: 'phantom',      name: 'Phantom',      sub: 'Solana & EVM',      chains: ['solana','ethereum'], icon: '👻' },
+    { id: 'ledger',       name: 'Ledger',       sub: 'Hardware Wallet',   chains: ['ethereum','solana','polygon','bnb','bitcoin'], icon: '🔒' },
+    { id: 'walletconnect',name: 'WalletConnect',sub: 'QR Code Scan',      chains: ['ethereum','polygon','bnb','arbitrum','optimism','avalanche','base'], icon: '🔗' },
+    { id: 'coinbase',     name: 'Coinbase Wallet',sub: 'Mobile & Extension',chains: ['ethereum','polygon','solana','base'], icon: '🔵' },
+    { id: 'trust',        name: 'Trust Wallet', sub: 'Mobile Wallet',     chains: ['ethereum','bnb','polygon','solana','avalanche'], icon: '🛡️' },
+    { id: 'okx',          name: 'OKX Wallet',   sub: 'Multi-chain',       chains: ['ethereum','solana','polygon','bnb','arbitrum','optimism'], icon: '⭕' },
+    { id: 'rainbow',      name: 'Rainbow',      sub: 'Ethereum Focused',  chains: ['ethereum','polygon','arbitrum','optimism','base'], icon: '🌈' },
   ],
 
   DEMO_WALLET: {
-    address: '0x3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5',
-    shortAddress: '0x3FZb...5c5',
-    balance: 156420.69,
-    pnl: 12.4,
-    chain: 'ethereum'
+    address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+    ens: 'vitalik.eth',
+    chain: 'ethereum',
+    label: 'Demo Wallet (Vitalik.eth)',
   },
 
-  TOKENS: [
-    { symbol:'ETH', name:'Ethereum', price:3847.20, change:2.4, balance:4.28, value:16466.02, chain:'ethereum', color:'#627EEA' },
-    { symbol:'BTC', name:'Bitcoin', price:67420.00, change:1.8, balance:0.185, value:12472.70, chain:'bitcoin', color:'#F7931A' },
-    { symbol:'SOL', name:'Solana', price:185.40, change:-1.2, balance:19.5, value:3615.30, chain:'solana', color:'#14F195' },
-    { symbol:'MATIC', name:'Polygon', price:1.24, change:3.7, balance:2841, value:3522.84, chain:'polygon', color:'#8247E5' },
-    { symbol:'ARB', name:'Arbitrum', price:1.89, change:5.2, balance:892, value:1685.88, chain:'arbitrum', color:'#28A0F0' },
-    { symbol:'LINK', name:'Chainlink', price:18.90, change:4.1, balance:75, value:1417.50, chain:'ethereum', color:'#375BD2' },
-    { symbol:'UNI', name:'Uniswap', price:12.40, change:-2.1, balance:88, value:1091.20, chain:'ethereum', color:'#FF007A' },
-    { symbol:'AAVE', name:'Aave', price:142.80, change:6.8, balance:6.2, value:885.36, chain:'ethereum', color:'#B6509E' },
-    { symbol:'BNB', name:'BNB', price:624.50, change:0.9, balance:1.2, value:749.40, chain:'bnb', color:'#F0B90B' },
-    { symbol:'USDC', name:'USD Coin', price:1.00, change:0.0, balance:2450, value:2450.00, chain:'ethereum', color:'#2775CA' },
-    { symbol:'USDT', name:'Tether', price:1.00, change:0.01, balance:890, value:890.00, chain:'ethereum', color:'#26A17B' },
-    { symbol:'PEPE', name:'Pepe', price:0.0000142, change:18.4, balance:48000000, value:681.60, chain:'ethereum', color:'#4CAF50' },
-  ],
+  TOKENS: {
+    ethereum: [
+      { symbol: 'ETH',  name: 'Ethereum',       decimals: 18, coingeckoId: 'ethereum' },
+      { symbol: 'USDC', name: 'USD Coin',        decimals: 6,  coingeckoId: 'usd-coin',    contract: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+      { symbol: 'USDT', name: 'Tether',          decimals: 6,  coingeckoId: 'tether',      contract: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
+      { symbol: 'WBTC', name: 'Wrapped Bitcoin', decimals: 8,  coingeckoId: 'wrapped-bitcoin', contract: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' },
+      { symbol: 'LINK', name: 'Chainlink',       decimals: 18, coingeckoId: 'chainlink',   contract: '0x514910771AF9Ca656af840dff83E8264EcF986CA' },
+      { symbol: 'UNI',  name: 'Uniswap',         decimals: 18, coingeckoId: 'uniswap',     contract: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984' },
+    ],
+    solana: [
+      { symbol: 'SOL',  name: 'Solana',    decimals: 9, coingeckoId: 'solana' },
+      { symbol: 'RAY',  name: 'Raydium',   decimals: 6, coingeckoId: 'raydium' },
+      { symbol: 'JUP',  name: 'Jupiter',   decimals: 6, coingeckoId: 'jupiter-exchange-solana' },
+      { symbol: 'BONK', name: 'Bonk',      decimals: 5, coingeckoId: 'bonk' },
+    ],
+    bnb: [
+      { symbol: 'BNB',  name: 'BNB',       decimals: 18, coingeckoId: 'binancecoin' },
+      { symbol: 'CAKE', name: 'PancakeSwap',decimals: 18, coingeckoId: 'pancakeswap-token', contract: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82' },
+    ],
+  },
 
-  GAS: { standard: 18, fast: 24, instant: 35 },
+  GAS: {
+    ethereum:  { slow: 10, standard: 15, fast: 25, unit: 'Gwei' },
+    polygon:   { slow: 30, standard: 50, fast: 80, unit: 'Gwei' },
+    bnb:       { slow: 3,  standard: 5,  fast: 7,  unit: 'Gwei' },
+    arbitrum:  { slow: 0.1,standard: 0.1,fast: 0.2,unit: 'Gwei' },
+    optimism:  { slow: 0.001,standard:0.001,fast:0.002,unit:'Gwei'},
+    avalanche: { slow: 25, standard: 27, fast: 30, unit: 'nAVAX' },
+    base:      { slow: 0.001,standard:0.001,fast:0.002,unit:'Gwei'},
+  },
 
-  PORTFOLIO_TOTAL: 156420.69,
-  PORTFOLIO_PNL_24H: 2.4,
-  PORTFOLIO_PNL_7D: 8.7,
+  PORTFOLIO_TOTAL: 284719.40,
+  PORTFOLIO_PNL_24H: 4.82,
+  PORTFOLIO_PNL_7D: 12.35,
+  WALLETS_COUNT: 3,
+  CHAINS_ACTIVE: 12,
+
+  API: {
+    COINGECKO_BASE: 'https://api.coingecko.com/api/v3',
+    MORALIS_BASE:   'https://deep-index.moralis.io/api/v2',
+    ALCHEMY_ETH:    'https://eth-mainnet.g.alchemy.com/v2/',
+    SOLANA_RPC:     'https://api.mainnet-beta.solana.com',
+  },
+
+  Format: {
+    usd: (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    pct: (n) => (n >= 0 ? '+' : '') + Number(n).toFixed(2) + '%',
+    addr: (a) => a ? a.slice(0, 6) + '...' + a.slice(-4) : '',
+    num: (n) => Number(n).toLocaleString('en-US'),
+    compact: (n) => {
+      if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+      if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+      if (n >= 1e3) return '$' + (n / 1e3).toFixed(2) + 'K';
+      return '$' + n.toFixed(2);
+    },
+  },
 };
 
-const Format = {
-  currency: (v, decimals=2) => {
-    if(Math.abs(v) >= 1e9) return '$' + (v/1e9).toFixed(2) + 'B';
-    if(Math.abs(v) >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
-    if(Math.abs(v) >= 1e3) return '$' + (v/1e3).toFixed(2) + 'K';
-    return '$' + v.toFixed(decimals);
-  },
-  compact: (v) => {
-    if(Math.abs(v) >= 1e9) return (v/1e9).toFixed(1) + 'B';
-    if(Math.abs(v) >= 1e6) return (v/1e6).toFixed(1) + 'M';
-    if(Math.abs(v) >= 1e3) return (v/1e3).toFixed(1) + 'K';
-    return v.toFixed(0);
-  },
-  pct: (v, plus=true) => (plus && v > 0 ? '+' : '') + v.toFixed(2) + '%',
-  address: (addr) => addr.slice(0,6) + '...' + addr.slice(-4),
-  hash: (h) => h.slice(0,10) + '...' + h.slice(-6),
-  date: (d) => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
-  time: (d) => new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
-};
+if (typeof module !== 'undefined') module.exports = CONFIG;
