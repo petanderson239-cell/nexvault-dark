@@ -1,199 +1,944 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — NexVault</title>
+  <meta name="description" content="Your multi-chain crypto portfolio dashboard. Real-time balances, prices, charts and analytics." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Styles -->
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/animations.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .dash-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 0;
+      min-height: 100dvh;
+      width: min(calc(100% - 16px), 1420px);
+      margin: 0 auto;
+    }
+
+    /* ── SIDEBAR ── */
+    .dash-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      padding: 22px 16px 22px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 14px;
+      margin-bottom: 8px;
+      text-decoration: none;
+    }
+
+    .sidebar-brand-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background:
+        linear-gradient(145deg, rgba(0, 212, 170, 0.22), rgba(79, 124, 255, 0.12)),
+        rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-brand-text strong {
+      display: block;
+      font-size: 15px;
+      color: #ebf2ff;
+    }
+
+    .sidebar-brand-text span {
+      font-size: 12px;
+      color: rgba(235, 242, 255, 0.44);
+    }
+
+    .sidebar-section-label {
+      padding: 10px 14px 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(235, 242, 255, 0.32);
+    }
+
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      color: rgba(235, 242, 255, 0.62);
+      text-decoration: none;
+      transition: background 200ms ease, color 200ms ease;
+    }
+
+    .sidebar-nav-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #ebf2ff;
+    }
+
+    .sidebar-nav-item.active {
+      background: linear-gradient(160deg, rgba(0, 212, 170, 0.13), rgba(79, 124, 255, 0.08));
+      border: 1px solid rgba(0, 212, 170, 0.15);
+      color: #f3fbff;
+    }
+
+    .sidebar-nav-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      display: grid;
+      gap: 10px;
+      padding-top: 14px;
+    }
+
+    .sidebar-wallet-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      display: grid;
+      gap: 10px;
+    }
+
+    .sidebar-wallet-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .sidebar-wallet-id {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-wallet-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #00d4aa;
+      box-shadow: 0 0 0 5px rgba(0, 212, 170, 0.12);
+    }
+
+    .sidebar-wallet-address {
+      font-size: 13px;
+      color: rgba(235, 242, 255, 0.7);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sidebar-wallet-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .sidebar-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 200ms ease;
+    }
+
+    .sidebar-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ── MAIN CONTENT ── */
+    .dash-main {
+      padding: 24px 0 60px 24px;
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    /* ── TOPBAR ── */
+    .dash-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 0 4px;
+    }
+
+    .dash-page-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #ebf2ff;
+    }
+
+    .dash-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      color: rgba(235, 242, 255, 0.7);
+      cursor: pointer;
+      transition: background 200ms ease, color 200ms ease;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #ebf2ff;
+    }
+
+    /* ── KPI GRID ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .kpi-tile {
+      padding: 22px;
+      border-radius: 24px;
+      background:
+        linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: grid;
+      gap: 10px;
+      transition: transform 220ms ease;
+    }
+
+    .kpi-tile:hover {
+      transform: translateY(-2px);
+    }
+
+    .kpi-tile-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(235, 242, 255, 0.42);
+    }
+
+    .kpi-tile-value {
+      font-size: clamp(22px, 2.2vw, 30px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #ebf2ff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kpi-tile-sub {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: rgba(235, 242, 255, 0.52);
+    }
+
+    .kpi-tile-sub .positive { color: #59e59a; }
+    .kpi-tile-sub .negative { color: #ff6b81; }
+
+    /* ── CHART ROW ── */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+    }
+
+    .chart-panel {
+      padding: 24px;
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .chart-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .chart-panel-title {
+      margin: 0 0 4px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ebf2ff;
+    }
+
+    .chart-range-pills {
+      display: flex;
+      gap: 6px;
+    }
+
+    .chart-range-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(235, 242, 255, 0.62);
+      cursor: pointer;
+      transition: all 200ms ease;
+    }
+
+    .chart-range-pill:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #ebf2ff;
+    }
+
+    .chart-range-pill.active {
+      background: rgba(0, 212, 170, 0.14);
+      border-color: rgba(0, 212, 170, 0.24);
+      color: #a7ffd7;
+    }
+
+    .perf-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .perf-value {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #ebf2ff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .perf-change {
+      font-size: 14px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .perf-change.positive {
+      background: rgba(89, 229, 154, 0.12);
+      color: #59e59a;
+    }
+
+    .perf-change.negative {
+      background: rgba(255, 107, 129, 0.12);
+      color: #ff6b81;
+    }
+
+    /* ── HOLDINGS TABLE ── */
+    .holdings-panel {
+      padding: 24px;
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .holdings-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .holdings-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ebf2ff;
+    }
+
+    .holdings-table-wrap {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .holdings-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .holdings-table thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(235, 242, 255, 0.36);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .holdings-table thead th:last-child {
+      text-align: right;
+    }
+
+    .holdings-table tbody td {
+      padding: 14px 16px;
+      font-size: 14px;
+      color: rgba(235, 242, 255, 0.78);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-variant-numeric: tabular-nums;
+      vertical-align: middle;
+    }
+
+    .holdings-table tbody td:last-child {
+      text-align: right;
+    }
+
+    .holdings-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .holdings-table tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.022);
+    }
+
+    .asset-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .asset-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .asset-meta {
+      display: grid;
+      gap: 2px;
+    }
+
+    .asset-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ebf2ff;
+    }
+
+    .asset-ticker {
+      font-size: 12px;
+      color: rgba(235, 242, 255, 0.42);
+    }
+
+    /* ── MARKET SNAPSHOT ── */
+    .market-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .market-tile {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      display: grid;
+      gap: 6px;
+    }
+
+    .market-tile-sym {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(235, 242, 255, 0.42);
+    }
+
+    .market-tile-price {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ebf2ff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .market-tile-change {
+      font-size: 13px;
+    }
+
+    /* ── LAST UPDATED ── */
+    .meta-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 8px 0;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1100px) {
+      .chart-row {
+        grid-template-columns: 1fr;
+      }
+      .kpi-row,
+      .market-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 860px) {
+      .dash-layout {
+        grid-template-columns: 1fr;
+      }
+      .dash-sidebar {
+        position: static;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 14px 0;
+        gap: 4px;
+        overflow-x: auto;
+      }
+      .sidebar-section-label,
+      .sidebar-bottom,
+      .sidebar-brand-text {
+        display: none;
+      }
+      .sidebar-brand {
+        margin-bottom: 0;
+      }
+      .sidebar-nav-item {
+        flex-direction: column;
+        gap: 4px;
+        height: 52px;
+        padding: 0 12px;
+        font-size: 11px;
+        min-height: auto;
+      }
+      .dash-main {
+        padding: 0 0 40px;
+      }
+      .kpi-row,
+      .market-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .kpi-row,
+      .market-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body class="app-body">
-<div class="aurora"></div>
-<canvas id="particleCanvas"></canvas>
 
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <span class="logo-icon">&#9679;</span>
-    <span class="logo-text">NexVault</span>
-  </div>
-  <nav class="sidebar-nav">
-    <a href="dashboard.html" class="nav-item active"><span>&#128200;</span> Dashboard</a>
-    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
-    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
-    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
-    <a href="transactions.html" class="nav-item"><span>&#128257;</span> Transactions</a>
-    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
-  </nav>
-  <div class="sidebar-bottom">
-    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
-  </div>
-</aside>
+<body>
+  <canvas id="particleCanvas" class="particle-canvas" aria-hidden="true"></canvas>
 
-<!-- MAIN -->
-<main class="main-content">
-  <!-- TOPBAR -->
-  <header class="topbar">
-    <div class="topbar-left">
-      <button class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
-      <h1 class="page-title">Dashboard</h1>
-    </div>
-    <div class="topbar-right">
-      <div class="gas-badge" id="gasBadge">&#9981; -- Gwei</div>
-      <div class="wallet-indicator" id="walletIndicator">No Wallet</div>
-    </div>
-  </header>
+  <div class="dash-layout">
 
-  <!-- KPI CARDS -->
-  <section class="kpi-grid">
-    <div class="kpi-card tilt-card reveal">
-      <div class="kpi-label">Total Portfolio</div>
-      <div class="kpi-value" id="kpiPortfolio">$284,719.40</div>
-      <div class="kpi-change positive">+4.82% (24h)</div>
-    </div>
-    <div class="kpi-card tilt-card reveal">
-      <div class="kpi-label">All-Time PnL</div>
-      <div class="kpi-value positive" id="kpiPnl">+$94,220.18</div>
-      <div class="kpi-change positive">+49.5% overall</div>
-    </div>
-    <div class="kpi-card tilt-card reveal">
-      <div class="kpi-label">Gas Price</div>
-      <div class="kpi-value" id="kpiGas">28 Gwei</div>
-      <div class="kpi-change">Standard speed</div>
-    </div>
-    <div class="kpi-card tilt-card reveal">
-      <div class="kpi-label">Wallets</div>
-      <div class="kpi-value">3</div>
-      <div class="kpi-change">MetaMask &bull; Phantom &bull; Ledger</div>
-    </div>
-  </section>
+    <!-- ── SIDEBAR ── -->
+    <aside class="dash-sidebar" role="navigation" aria-label="App navigation">
+      <a href="index.html" class="sidebar-brand" aria-label="Go to NexVault home">
+        <div class="sidebar-brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+            <polygon points="11,2 20,7 20,15 11,20 2,15 2,7" stroke="#00d4aa" stroke-width="1.5" fill="none" />
+            <polygon points="11,6 16,9 16,14 11,17 6,14 6,9" fill="rgba(0,212,170,0.18)" stroke="#4f7cff" stroke-width="1" />
+            <circle cx="11" cy="11" r="2.5" fill="#00d4aa" />
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <strong>NexVault</strong>
+          <span>Universal</span>
+        </div>
+      </a>
 
-  <!-- CHARTS ROW -->
-  <section class="charts-row">
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3>Portfolio Value</h3>
-        <div class="period-tabs">
-          <button class="period-tab active" data-period="24h">24H</button>
-          <button class="period-tab" data-period="7d">7D</button>
-          <button class="period-tab" data-period="30d">30D</button>
-          <button class="period-tab" data-period="1y">1Y</button>
+      <p class="sidebar-section-label">Portfolio</p>
+
+      <a href="dashboard.html" class="sidebar-nav-item active" aria-current="page">
+        <span class="sidebar-nav-icon" aria-hidden="true">⬡</span>
+        Dashboard
+      </a>
+      <a href="tokens.html" class="sidebar-nav-item">
+        <span class="sidebar-nav-icon" aria-hidden="true">◈</span>
+        Tokens
+      </a>
+      <a href="nft.html" class="sidebar-nav-item">
+        <span class="sidebar-nav-icon" aria-hidden="true">🖼</span>
+        NFTs
+      </a>
+      <a href="transactions.html" class="sidebar-nav-item">
+        <span class="sidebar-nav-icon" aria-hidden="true">⚡</span>
+        Transactions
+      </a>
+      <a href="analytics.html" class="sidebar-nav-item">
+        <span class="sidebar-nav-icon" aria-hidden="true">📊</span>
+        Analytics
+      </a>
+
+      <p class="sidebar-section-label">Settings</p>
+      <a href="wallet.html" class="sidebar-nav-item">
+        <span class="sidebar-nav-icon" aria-hidden="true">🔗</span>
+        Wallets
+      </a>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-wallet-card" id="sidebarWalletCard">
+          <div class="sidebar-wallet-top">
+            <div class="sidebar-wallet-id">
+              <div class="sidebar-wallet-dot" aria-hidden="true"></div>
+              <span class="sidebar-wallet-address" id="walletAddressLabel">Not connected</span>
+            </div>
+            <div class="sidebar-wallet-actions">
+              <button class="sidebar-icon-btn" data-copy-wallet title="Copy address" aria-label="Copy wallet address">⧉</button>
+              <button class="sidebar-icon-btn" data-wallet-disconnect title="Disconnect" aria-label="Disconnect wallet">✕</button>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            style="width:100%;height:40px;border-radius:14px;font-size:14px;"
+            data-wallet-trigger
+            aria-label="Connect wallet"
+          >
+            <span id="walletFamilyLabel">Connect Wallet</span>
+          </button>
+        </div>
+
+        <div class="status-row" id="sourceStatus" style="font-size:12px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);" aria-live="polite"></div>
+      </div>
+    </aside>
+
+    <!-- ── MAIN ── -->
+    <main class="dash-main" id="main-content">
+
+      <!-- Topbar -->
+      <div class="dash-topbar">
+        <h1 class="dash-page-title">Dashboard</h1>
+        <div class="dash-topbar-right">
+          <div
+            id="topbarWallet"
+            class="topbar-wallet"
+            data-wallet-trigger
+            role="button"
+            tabindex="0"
+            aria-label="Wallet status"
+            style="cursor:pointer;"
+          >
+            <span>Connect Wallet</span>
+          </div>
+          <button class="refresh-btn" onclick="hydratePortfolio && hydratePortfolio()" aria-label="Refresh portfolio data">
+            ↻ Refresh
+          </button>
         </div>
       </div>
-      <canvas id="portfolioChart" height="120"></canvas>
-    </div>
-    <div class="chart-card chart-card-sm">
-      <div class="chart-header"><h3>Allocation</h3></div>
-      <canvas id="allocationChart" height="180"></canvas>
-    </div>
-  </section>
 
-  <!-- TOP HOLDINGS -->
-  <section class="table-card">
-    <div class="table-header">
-      <h3>Top Holdings</h3>
-      <div class="table-actions">
-        <input type="text" class="search-input" placeholder="Search token..." oninput="filterTable(this.value)" />
-        <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+      <!-- Trust bar -->
+      <div id="trustBar" role="complementary" aria-label="Security indicators"></div>
+
+      <!-- KPI row -->
+      <section aria-label="Portfolio KPIs">
+        <div class="kpi-row">
+          <div class="kpi-tile reveal tilt-card">
+            <div class="kpi-tile-label">Total Portfolio</div>
+            <div class="kpi-tile-value" id="kpiPortfolio">$284,719</div>
+            <div class="kpi-tile-sub">
+              <span id="portfolioChange24h" class="positive">+4.82%</span>
+              <span>vs yesterday</span>
+            </div>
+          </div>
+          <div class="kpi-tile reveal tilt-card">
+            <div class="kpi-tile-label">All-Time PnL</div>
+            <div class="kpi-tile-value" id="kpiPnl">+$94,220</div>
+            <div class="kpi-tile-sub">
+              <span class="positive">+49.5%</span>
+              <span>total return</span>
+            </div>
+          </div>
+          <div class="kpi-tile reveal tilt-card">
+            <div class="kpi-tile-label">24h Change</div>
+            <div class="kpi-tile-value" id="kpiPnl24h">+4.82%</div>
+            <div class="kpi-tile-sub">
+              <span id="kpiWallets">3</span>
+              <span>wallets tracked</span>
+            </div>
+          </div>
+          <div class="kpi-tile reveal tilt-card">
+            <div class="kpi-tile-label">Assets Tracked</div>
+            <div class="kpi-tile-value" id="kpiTokens">12</div>
+            <div class="kpi-tile-sub">
+              <span id="kpiNfts">9</span>
+              <span>NFTs</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chart row -->
+      <section class="chart-row" aria-label="Portfolio charts">
+        <!-- Performance chart -->
+        <div class="chart-panel reveal">
+          <div class="chart-panel-head">
+            <div>
+              <h2 class="chart-panel-title">Portfolio Value</h2>
+              <p style="margin:0;font-size:13px;color:rgba(235,242,255,0.48);">Historical performance</p>
+            </div>
+            <div class="chart-range-pills" role="group" aria-label="Chart time range">
+              <button class="chart-range-pill active" data-chart-range="7" aria-pressed="true">7D</button>
+              <button class="chart-range-pill" data-chart-range="14" aria-pressed="false">14D</button>
+              <button class="chart-range-pill" data-chart-range="30" aria-pressed="false">30D</button>
+              <button class="chart-range-pill" data-chart-range="90" aria-pressed="false">90D</button>
+            </div>
+          </div>
+          <div class="perf-meta">
+            <span class="perf-value" id="chartPerformanceValue">$284,719</span>
+            <span class="perf-change positive" id="chartPerformanceChange">+4.82%</span>
+          </div>
+          <div class="chart-wrap" style="height:280px;">
+            <canvas id="performanceChart" aria-label="Portfolio performance line chart" role="img"></canvas>
+          </div>
+        </div>
+
+        <!-- Allocation chart -->
+        <div class="chart-panel reveal">
+          <div class="chart-panel-head">
+            <div>
+              <h2 class="chart-panel-title">Allocation</h2>
+              <p style="margin:0;font-size:13px;color:rgba(235,242,255,0.48);">By asset</p>
+            </div>
+          </div>
+          <div class="chart-wrap compact" style="height:220px;">
+            <canvas id="allocationChart" aria-label="Portfolio allocation doughnut chart" role="img"></canvas>
+          </div>
+          <div id="allocationLegend" style="margin-top:14px;" aria-label="Allocation legend"></div>
+        </div>
+      </section>
+
+      <!-- Market snapshot -->
+      <section aria-label="Market snapshot">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+          <h2 style="margin:0;font-size:16px;font-weight:700;color:#ebf2ff;">Market Snapshot</h2>
+          <span style="font-size:12px;color:rgba(235,242,255,0.38);" aria-live="polite" id="lastUpdated">Loading…</span>
+        </div>
+        <div class="market-row" id="marketSnapshotGrid" aria-label="Live market prices">
+          <!-- Populated by charts.js -->
+          <div class="market-tile skeleton skeleton-block" style="height:84px;"></div>
+          <div class="market-tile skeleton skeleton-block" style="height:84px;"></div>
+          <div class="market-tile skeleton skeleton-block" style="height:84px;"></div>
+          <div class="market-tile skeleton skeleton-block" style="height:84px;"></div>
+          <div class="market-tile skeleton skeleton-block" style="height:84px;"></div>
+          <div class="market-tile skeleton skeleton-block" style="height:84px;"></div>
+        </div>
+      </section>
+
+      <!-- Top holdings table -->
+      <section class="holdings-panel reveal" aria-labelledby="holdingsTitle">
+        <div class="holdings-head">
+          <h2 class="holdings-title" id="holdingsTitle">Top Holdings</h2>
+          <a href="tokens.html" style="font-size:13px;color:#00d4aa;" aria-label="View all tokens">View all →</a>
+        </div>
+        <div class="holdings-table-wrap">
+          <table class="holdings-table" aria-label="Top token holdings">
+            <thead>
+              <tr>
+                <th scope="col">Asset</th>
+                <th scope="col">Price</th>
+                <th scope="col">24H</th>
+                <th scope="col">Holdings</th>
+                <th scope="col">Value</th>
+              </tr>
+            </thead>
+            <tbody id="holdingsTableBody">
+              <!-- Populated by JS below -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Meta footer -->
+      <div class="meta-footer-row">
+        <span style="font-size:12px;color:rgba(235,242,255,0.36);" aria-live="polite">
+          Price data by <strong>CoinGecko</strong> · Wallet data by <strong>GoldRush</strong>
+        </span>
+        <div class="status-row" style="font-size:12px;color:rgba(235,242,255,0.42);">
+          <span class="live-dot" aria-hidden="true" style="width:7px;height:7px;"></span>
+          Live
+        </div>
       </div>
-    </div>
-    <table class="data-table" id="holdingsTable">
-      <thead>
-        <tr>
-          <th>Asset</th>
-          <th>Price</th>
-          <th>24H</th>
-          <th>Holdings</th>
-          <th>Value</th>
-          <th>7D Chart</th>
-        </tr>
-      </thead>
-      <tbody id="holdingsTbody">
-        <tr><td><span class="token-name">Ethereum</span><span class="token-sym">ETH</span></td><td>$3,210.50</td><td class="positive">+2.14%</td><td>42.5 ETH</td><td>$136,446</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
-        <tr><td><span class="token-name">Bitcoin</span><span class="token-sym">BTC</span></td><td>$67,420.00</td><td class="positive">+1.87%</td><td>1.02 BTC</td><td>$68,768</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
-        <tr><td><span class="token-name">Solana</span><span class="token-sym">SOL</span></td><td>$182.30</td><td class="negative">-0.93%</td><td>210 SOL</td><td>$38,283</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
-        <tr><td><span class="token-name">Arbitrum</span><span class="token-sym">ARB</span></td><td>$1.24</td><td class="positive">+5.82%</td><td>12,400 ARB</td><td>$15,376</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
-        <tr><td><span class="token-name">USD Coin</span><span class="token-sym">USDC</span></td><td>$1.00</td><td class="neutral">0.00%</td><td>25,846 USDC</td><td>$25,846</td><td><canvas class="sparkline" width="80" height="30"></canvas></td></tr>
-      </tbody>
-    </table>
-  </section>
 
-  <!-- BOTTOM ROW -->
-  <section class="bottom-row">
-    <div class="mini-card">
-      <h4>Gas Tracker</h4>
-      <div class="gas-row"><span>Slow</span><span class="gas-val" id="gasSlow">18 Gwei</span></div>
-      <div class="gas-row"><span>Standard</span><span class="gas-val" id="gasStd">28 Gwei</span></div>
-      <div class="gas-row"><span>Fast</span><span class="gas-val" id="gasFast">42 Gwei</span></div>
-    </div>
-    <div class="mini-card">
-      <h4>Recent Transactions</h4>
-      <div class="tx-row"><span class="badge badge-success">Receive</span><span>+2.5 ETH</span><span class="text-muted">2h ago</span></div>
-      <div class="tx-row"><span class="badge badge-danger">Send</span><span>-0.5 ETH</span><span class="text-muted">5h ago</span></div>
-      <div class="tx-row"><span class="badge badge-info">Swap</span><span>ETH &rarr; USDC</span><span class="text-muted">1d ago</span></div>
-      <a href="transactions.html" class="text-link">View all &rarr;</a>
-    </div>
-  </section>
-</main>
-
-<!-- MOBILE NAV -->
-<nav class="mobile-nav">
-  <a href="dashboard.html" class="mobile-nav-item active">&#128200; Dashboard</a>
-  <a href="wallet.html" class="mobile-nav-item">&#128179; Wallets</a>
-  <a href="tokens.html" class="mobile-nav-item">&#128176; Tokens</a>
-  <a href="nft.html" class="mobile-nav-item">&#128444; NFTs</a>
-  <a href="analytics.html" class="mobile-nav-item">&#128202; Analytics</a>
-</nav>
-
-<!-- WALLET MODAL -->
-<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Connect Wallet</h3>
-      <button class="modal-close" onclick="closeModal('walletModal')">&times;</button>
-    </div>
-    <div class="wallet-grid" id="walletGrid"></div>
+    </main>
   </div>
-</div>
 
-<div class="toast-container" id="toastContainer"></div>
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<script src="config.js"></script>
-<script src="assets/js/animations.js"></script>
-<script src="assets/js/wallet.js"></script>
-<script src="assets/js/charts.js"></script>
-<script src="assets/js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  initParticles('particleCanvas');
-  initTilt();
-  initScrollReveal();
-  initGasTracker();
-  initPriceTicker();
-  // Portfolio chart
-  initPortfolioChart('portfolioChart');
-  initAllocationChart('allocationChart');
-  // Sparklines
-  document.querySelectorAll('.sparkline').forEach(c => initSparkline(c));
-  // Period tabs
-  document.querySelectorAll('.period-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      updatePortfolioChart('portfolioChart', btn.dataset.period);
+  <!-- WALLET MODAL -->
+  <div id="walletModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title" id="walletModalTitle">Connect Wallet</h2>
+          <p class="modal-subtitle">Select your chain family, then choose a wallet</p>
+        </div>
+        <button
+          type="button"
+          class="modal-close"
+          onclick="closeModal('walletModal')"
+          aria-label="Close wallet connection modal"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M2 2l14 14M16 2L2 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="wallet-family-tabs" role="tablist" aria-label="Select blockchain family">
+        <button type="button" class="wallet-family-tab active" data-wallet-family="evm" role="tab" aria-selected="true" aria-controls="walletGrid">EVM</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="solana" role="tab" aria-selected="false" aria-controls="walletGrid">Solana</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="bitcoin" role="tab" aria-selected="false" aria-controls="walletGrid">Bitcoin</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="tron" role="tab" aria-selected="false" aria-controls="walletGrid">TRON</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="ton" role="tab" aria-selected="false" aria-controls="walletGrid">TON</button>
+      </div>
+
+      <div id="walletGrid" class="wallet-grid" role="tabpanel" aria-label="Available wallets"></div>
+      <div id="walletConnectStatus" class="wallet-connect-status" role="status" aria-live="polite">Choose a wallet to continue</div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="config.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/wallet.js"></script>
+  <script src="assets/js/charts.js"></script>
+
+  <script>
+    // Holdings table — render from AppState.balances or demo seed
+    function renderHoldingsTable() {
+      const tbody = document.getElementById("holdingsTableBody");
+      if (!tbody) return;
+
+      const balances = window.AppState?.balances;
+      const prices = window.AppState?.prices || {};
+      const cfg = window.NEXVAULT_CONFIG;
+
+      const DEMO_HOLDINGS = [
+        { name: "Ethereum", ticker: "ETH", coinId: "ethereum", amount: "42.50", value: 136446, change24h: 2.14, color: "#627EEA" },
+        { name: "Bitcoin", ticker: "BTC", coinId: "bitcoin", amount: "1.02", value: 68768, change24h: 1.87, color: "#F7931A" },
+        { name: "Solana", ticker: "SOL", coinId: "solana", amount: "210", value: 38283, change24h: -0.93, color: "#14F195" },
+        { name: "Arbitrum", ticker: "ARB", coinId: "arbitrum", amount: "12,400", value: 15376, change24h: 5.82, color: "#28A0F0" },
+        { name: "USD Coin", ticker: "USDC", coinId: "usd-coin", amount: "25,846", value: 25846, change24h: 0.00, color: "#2775CA" }
+      ];
+
+      const rows = (Array.isArray(balances) && balances.length)
+        ? balances.slice(0, 8).map(b => ({
+            name: b.name || b.symbol || "Asset",
+            ticker: b.symbol || b.ticker || "--",
+            coinId: b.coinId || null,
+            amount: Number(b.amount || b.balance || 0).toLocaleString(undefined, { maximumFractionDigits: 4 }),
+            value: Number(b.usdValue || b.valueUsd || 0),
+            change24h: Number(b.change24h || b.priceChange24h || 0),
+            color: b.color || "#00d4aa"
+          }))
+        : DEMO_HOLDINGS;
+
+      tbody.innerHTML = rows.map(row => {
+        const pEntry = prices[row.coinId] || {};
+        const livePrice = pEntry.usd ? window.Utils?.formatMoney(pEntry.usd) : "—";
+        const liveChange = pEntry.usd_24h_change != null
+          ? Number(pEntry.usd_24h_change)
+          : row.change24h;
+        const isPos = liveChange >= 0;
+        const explorerBase = cfg?.ui?.explorerBase?.[row.ticker?.toLowerCase()] || "#";
+
+        return `
+          <tr>
+            <td>
+              <div class="asset-cell">
+                <div class="asset-circle" style="background:${row.color}22;color:${row.color};">
+                  ${row.ticker.slice(0, 3)}
+                </div>
+                <div class="asset-meta">
+                  <div class="asset-name">${row.name}</div>
+                  <div class="asset-ticker">${row.ticker}</div>
+                </div>
+              </div>
+            </td>
+            <td>${livePrice}</td>
+            <td class="${isPos ? "positive" : "negative"}">${isPos ? "+" : ""}${liveChange.toFixed(2)}%</td>
+            <td>${row.amount}</td>
+            <td><strong>${window.Utils?.formatMoney(row.value) || ("$" + row.value.toLocaleString())}</strong></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    // Wire range pill aria-pressed
+    document.querySelectorAll(".chart-range-pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".chart-range-pill").forEach(b => {
+          b.classList.remove("active");
+          b.setAttribute("aria-pressed", "false");
+        });
+        btn.classList.add("active");
+        btn.setAttribute("aria-pressed", "true");
+      });
     });
-  });
-});
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-}
-function filterTable(val) {
-  const rows = document.querySelectorAll('#holdingsTbody tr');
-  rows.forEach(r => {
-    r.style.display = r.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
-  });
-}
-</script>
+
+    document.addEventListener("nexvault:portfolio-updated", renderHoldingsTable);
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(renderHoldingsTable, 220);
+    });
+  </script>
 </body>
 </html>
