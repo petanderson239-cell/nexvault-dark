@@ -1,209 +1,389 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Transactions — NexVault</title>
+  <meta name="description" content="Track crypto transfers, swaps, mints and approvals across all your connected wallets." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="stylesheet" href="assets/css/animations.css" />
+
+  <style>
+    .dash-layout { display:grid; grid-template-columns:260px 1fr; min-height:100dvh; width:min(calc(100% - 16px),1420px); margin:0 auto; }
+    .dash-sidebar { position:sticky; top:0; height:100dvh; padding:22px 16px 22px 0; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+    .sidebar-brand { display:flex; align-items:center; gap:12px; padding:16px 14px; margin-bottom:8px; text-decoration:none; }
+    .sidebar-brand-icon { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:14px; background:linear-gradient(145deg,rgba(0,212,170,.22),rgba(79,124,255,.12)),rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+    .sidebar-brand-text strong { display:block; font-size:15px; color:#ebf2ff; }
+    .sidebar-brand-text span { font-size:12px; color:rgba(235,242,255,.44); }
+    .sidebar-section-label { padding:10px 14px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:rgba(235,242,255,.32); }
+    .sidebar-nav-item { display:flex; align-items:center; gap:12px; min-height:44px; padding:0 14px; border-radius:16px; font-size:14px; color:rgba(235,242,255,.62); text-decoration:none; transition:background .2s ease,color .2s ease; }
+    .sidebar-nav-item:hover { background:rgba(255,255,255,.04); color:#ebf2ff; }
+    .sidebar-nav-item.active { background:linear-gradient(160deg,rgba(0,212,170,.13),rgba(79,124,255,.08)); border:1px solid rgba(0,212,170,.15); color:#f3fbff; }
+    .sidebar-nav-icon { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:10px; background:rgba(255,255,255,.04); font-size:15px; flex-shrink:0; }
+
+    .dash-main { padding:24px 0 60px 24px; display:grid; gap:22px; align-content:start; }
+    .page-topbar { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+    .page-heading { margin:0; font-size:22px; font-weight:700; letter-spacing:-.03em; color:#ebf2ff; }
+
+    .kpi-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+    .kpi-tile { padding:20px; border-radius:22px; background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.08); display:grid; gap:8px; }
+    .kpi-tile-label { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:rgba(235,242,255,.42); }
+    .kpi-tile-value { font-size:clamp(22px,2vw,28px); font-weight:800; letter-spacing:-.04em; color:#ebf2ff; font-variant-numeric:tabular-nums; }
+    .kpi-tile-sub { font-size:13px; color:rgba(235,242,255,.5); }
+    .positive { color:#59e59a; }
+    .negative { color:#ff6b81; }
+
+    .toolbar { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+    .filter-group { display:flex; flex-wrap:wrap; gap:8px; }
+    .filter-pill { display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 14px; border-radius:999px; font-size:13px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color:rgba(235,242,255,.68); cursor:pointer; transition:all .2s ease; }
+    .filter-pill:hover { background:rgba(255,255,255,.07); color:#ebf2ff; }
+    .filter-pill.active { background:rgba(0,212,170,.14); border-color:rgba(0,212,170,.24); color:#a7ffd7; }
+    .filter-pill-dot { width:8px; height:8px; border-radius:50%; }
+
+    .search-wrap { position:relative; width:min(320px,100%); }
+    .search-wrap input { width:100%; height:42px; padding:0 14px 0 38px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); color:#ebf2ff; outline:none; }
+    .search-wrap span { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:rgba(235,242,255,.38); }
+
+    .panel { border-radius:28px; background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.08); overflow:hidden; }
+    .table-wrap { overflow-x:auto; }
+    .tx-table { width:100%; border-collapse:collapse; }
+    .tx-table thead th { padding:14px 18px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:rgba(235,242,255,.36); border-bottom:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.02); white-space:nowrap; }
+    .tx-table tbody td { padding:14px 18px; font-size:14px; color:rgba(235,242,255,.78); border-bottom:1px solid rgba(255,255,255,.04); font-variant-numeric:tabular-nums; vertical-align:middle; white-space:nowrap; }
+    .tx-table tbody tr:hover td { background:rgba(255,255,255,.02); }
+    .tx-table tbody tr:last-child td { border-bottom:0; }
+
+    .type-badge { display:inline-flex; align-items:center; gap:8px; height:30px; padding:0 10px; border-radius:999px; font-size:12px; font-weight:600; }
+    .type-received { background:rgba(89,229,154,.12); color:#59e59a; }
+    .type-sent { background:rgba(255,107,129,.12); color:#ff6b81; }
+    .type-swap { background:rgba(79,124,255,.12); color:#8fb0ff; }
+    .type-mint { background:rgba(255,191,71,.12); color:#ffd166; }
+
+    .asset-pill { display:flex; align-items:center; gap:10px; }
+    .asset-icon { width:34px; height:34px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+    .hash-btn { color:#8fb0ff; text-decoration:none; }
+    .hash-btn:hover { color:#c7d8ff; }
+
+    .pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-top:1px solid rgba(255,255,255,.06); }
+    .pager-btn { height:36px; padding:0 14px; border-radius:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); color:rgba(235,242,255,.72); cursor:pointer; }
+    .pager-btn:disabled { opacity:.45; cursor:not-allowed; }
+    .pager-label { font-size:13px; color:rgba(235,242,255,.5); }
+
+    .detail-card { padding:22px; display:grid; gap:16px; }
+    .detail-title { margin:0; font-size:16px; font-weight:700; color:#ebf2ff; }
+    .detail-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .detail-item { padding:14px; border-radius:16px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); display:grid; gap:5px; }
+    .detail-item span { font-size:12px; color:rgba(235,242,255,.4); text-transform:uppercase; letter-spacing:.05em; }
+    .detail-item strong { font-size:14px; color:#ebf2ff; font-variant-numeric:tabular-nums; }
+
+    @media (max-width:1100px) {
+      .kpi-row, .detail-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:860px) {
+      .dash-layout { grid-template-columns:1fr; }
+      .dash-sidebar { position:static; height:auto; flex-direction:row; flex-wrap:wrap; padding:14px 0; gap:4px; overflow-x:auto; }
+      .sidebar-section-label, .sidebar-brand-text { display:none; }
+      .sidebar-nav-item { flex-direction:column; gap:4px; height:52px; padding:0 12px; font-size:11px; min-height:auto; }
+      .dash-main { padding:0 0 40px; }
+      .kpi-row, .detail-grid { grid-template-columns:1fr; }
+    }
+  </style>
 </head>
-<body class="app-body">
-<div class="aurora"></div>
-<canvas id="particleCanvas"></canvas>
+<body>
+  <canvas id="particleCanvas" class="particle-canvas" aria-hidden="true"></canvas>
 
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><span class="logo-icon">&#9679;</span><span class="logo-text">NexVault</span></div>
-  <nav class="sidebar-nav">
-    <a href="dashboard.html" class="nav-item"><span>&#128200;</span> Dashboard</a>
-    <a href="wallet.html" class="nav-item"><span>&#128179;</span> Wallets</a>
-    <a href="tokens.html" class="nav-item"><span>&#128176;</span> Tokens</a>
-    <a href="nft.html" class="nav-item"><span>&#128444;</span> NFTs</a>
-    <a href="transactions.html" class="nav-item active"><span>&#128257;</span> Transactions</a>
-    <a href="analytics.html" class="nav-item"><span>&#128202;</span> Analytics</a>
-  </nav>
-  <div class="sidebar-bottom">
-    <button class="btn btn-outline btn-sm" onclick="openModal('walletModal')">+ Connect Wallet</button>
+  <div class="dash-layout">
+    <aside class="dash-sidebar" role="navigation" aria-label="App navigation">
+      <a href="index.html" class="sidebar-brand" aria-label="NexVault home">
+        <div class="sidebar-brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <polygon points="11,2 20,7 20,15 11,20 2,15 2,7" stroke="#00d4aa" stroke-width="1.5" fill="none"/>
+            <polygon points="11,6 16,9 16,14 11,17 6,14 6,9" fill="rgba(0,212,170,0.18)" stroke="#4f7cff" stroke-width="1"/>
+            <circle cx="11" cy="11" r="2.5" fill="#00d4aa"/>
+          </svg>
+        </div>
+        <div class="sidebar-brand-text"><strong>NexVault</strong><span>Universal</span></div>
+      </a>
+
+      <p class="sidebar-section-label">Portfolio</p>
+      <a href="dashboard.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">⬡</span>Dashboard</a>
+      <a href="tokens.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">◈</span>Tokens</a>
+      <a href="nft.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">🖼</span>NFTs</a>
+      <a href="transactions.html" class="sidebar-nav-item active" aria-current="page"><span class="sidebar-nav-icon">⚡</span>Transactions</a>
+      <a href="analytics.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">📊</span>Analytics</a>
+      <p class="sidebar-section-label">Settings</p>
+      <a href="wallet.html" class="sidebar-nav-item"><span class="sidebar-nav-icon">🔗</span>Wallets</a>
+    </aside>
+
+    <main class="dash-main" id="main-content">
+      <div class="page-topbar">
+        <h1 class="page-heading">Transactions</h1>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="topbar-wallet" data-wallet-trigger role="button" tabindex="0" aria-label="Wallet status" style="cursor:pointer;">
+            <span>Connect Wallet</span>
+          </div>
+          <button class="btn btn-primary" style="height:40px;padding:0 18px;border-radius:14px;font-size:14px;" onclick="renderTransactions()">↻</button>
+        </div>
+      </div>
+
+      <div id="trustBar" role="complementary" aria-label="Security indicators"></div>
+
+      <section class="kpi-row" aria-label="Transaction KPIs">
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Total TXs</div>
+          <div class="kpi-tile-value" id="kpiTxCount">15</div>
+          <div class="kpi-tile-sub">Recent activity</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Total In</div>
+          <div class="kpi-tile-value positive" id="kpiTxIn">+$9,698</div>
+          <div class="kpi-tile-sub">Received value</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Total Out</div>
+          <div class="kpi-tile-value negative" id="kpiTxOut">-$7,190</div>
+          <div class="kpi-tile-sub">Sent value</div>
+        </div>
+        <div class="kpi-tile reveal">
+          <div class="kpi-tile-label">Gas Spent</div>
+          <div class="kpi-tile-value" id="kpiGasSpent">$84.20</div>
+          <div class="kpi-tile-sub">Fees paid</div>
+        </div>
+      </section>
+
+      <div class="toolbar">
+        <div class="filter-group" id="typeFilters" role="group" aria-label="Filter transaction type">
+          <button class="filter-pill active" data-type="all">All</button>
+          <button class="filter-pill" data-type="received">Received</button>
+          <button class="filter-pill" data-type="sent">Sent</button>
+          <button class="filter-pill" data-type="swap">Swaps</button>
+          <button class="filter-pill" data-type="mint">Mints</button>
+        </div>
+
+        <div class="filter-group" id="chainFilters" role="group" aria-label="Filter chain">
+          <button class="filter-pill active" data-chain="all">All Chains</button>
+          <button class="filter-pill" data-chain="Ethereum"><span class="filter-pill-dot" style="background:#627EEA"></span>Ethereum</button>
+          <button class="filter-pill" data-chain="Solana"><span class="filter-pill-dot" style="background:#14F195"></span>Solana</button>
+          <button class="filter-pill" data-chain="Polygon"><span class="filter-pill-dot" style="background:#8247E5"></span>Polygon</button>
+          <button class="filter-pill" data-chain="Arbitrum"><span class="filter-pill-dot" style="background:#28A0F0"></span>Arbitrum</button>
+        </div>
+
+        <div class="search-wrap">
+          <span>🔍</span>
+          <input id="txSearch" type="search" placeholder="Search asset, address or hash…" aria-label="Search transactions" />
+        </div>
+      </div>
+
+      <section class="panel reveal" aria-label="Transaction history">
+        <div class="table-wrap">
+          <table class="tx-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Asset</th>
+                <th>Amount</th>
+                <th>Value</th>
+                <th>Chain</th>
+                <th>From / To</th>
+                <th>Time</th>
+                <th>Hash</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button class="pager-btn" id="prevPage">« Prev</button>
+          <span class="pager-label" id="pageLabel">Page 1 of 2</span>
+          <button class="pager-btn" id="nextPage">Next »</button>
+        </div>
+      </section>
+
+      <section class="panel reveal">
+        <div class="detail-card">
+          <h2 class="detail-title">Transaction Detail</h2>
+          <div class="detail-grid" id="txDetailGrid">
+            <div class="detail-item"><span>Status</span><strong>Waiting for selection</strong></div>
+            <div class="detail-item"><span>Network</span><strong>—</strong></div>
+            <div class="detail-item"><span>Fee</span><strong>—</strong></div>
+            <div class="detail-item"><span>Explorer</span><strong>—</strong></div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
-</aside>
 
-<main class="main-content">
-  <header class="topbar">
-    <div class="topbar-left">
-      <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
-      <h1 class="page-title">Transactions</h1>
+  <div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <div id="walletModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="walletModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 class="modal-title" id="walletModalTitle">Connect Wallet</h2>
+          <p class="modal-subtitle">Select your chain family, then choose a wallet</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('walletModal')" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 2l14 14M16 2L2 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="wallet-family-tabs" role="tablist" aria-label="Chain family">
+        <button type="button" class="wallet-family-tab active" data-wallet-family="evm" role="tab" aria-selected="true">EVM</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="solana" role="tab" aria-selected="false">Solana</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="bitcoin" role="tab" aria-selected="false">Bitcoin</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="tron" role="tab" aria-selected="false">TRON</button>
+        <button type="button" class="wallet-family-tab" data-wallet-family="ton" role="tab" aria-selected="false">TON</button>
+      </div>
+      <div id="walletGrid" class="wallet-grid" role="tabpanel"></div>
+      <div id="walletConnectStatus" class="wallet-connect-status" role="status" aria-live="polite">Choose a wallet to continue</div>
     </div>
-    <div class="topbar-right">
-      <button class="btn btn-outline btn-sm" onclick="exportTxCSV()">Export CSV</button>
-    </div>
-  </header>
-
-  <!-- STATS -->
-  <section class="kpi-grid">
-    <div class="kpi-card reveal"><div class="kpi-label">Total TXs</div><div class="kpi-value">15</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Total In</div><div class="kpi-value positive">+$9,698</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Total Out</div><div class="kpi-value negative">-$7,190</div></div>
-    <div class="kpi-card reveal"><div class="kpi-label">Gas Spent</div><div class="kpi-value">$84.20</div></div>
-  </section>
-
-  <!-- FILTERS -->
-  <section class="filter-bar">
-    <div class="filter-tabs">
-      <button class="filter-tab active" onclick="filterTx('all', this)">All</button>
-      <button class="filter-tab" onclick="filterTx('receive', this)">Received</button>
-      <button class="filter-tab" onclick="filterTx('send', this)">Sent</button>
-      <button class="filter-tab" onclick="filterTx('swap', this)">Swaps</button>
-      <button class="filter-tab" onclick="filterTx('mint', this)">Mints</button>
-    </div>
-    <select class="search-input" style="max-width:160px" onchange="filterChainTx(this.value)">
-      <option value="all">All Chains</option>
-      <option value="ethereum">Ethereum</option>
-      <option value="solana">Solana</option>
-      <option value="polygon">Polygon</option>
-      <option value="arbitrum">Arbitrum</option>
-    </select>
-    <input type="text" class="search-input" placeholder="Search TX..." oninput="searchTx(this.value)" />
-  </section>
-
-  <!-- TX TABLE -->
-  <section class="table-card">
-    <table class="data-table">
-      <thead>
-        <tr><th>Type</th><th>Asset</th><th>Amount</th><th>Value</th><th>Chain</th><th>From/To</th><th>Time</th><th>Hash</th></tr>
-      </thead>
-      <tbody id="txTbody"></tbody>
-    </table>
-  </section>
-
-  <!-- PAGINATION -->
-  <div class="pagination">
-    <button class="btn btn-outline btn-sm">&laquo; Prev</button>
-    <span class="page-info">Page 1 of 2</span>
-    <button class="btn btn-outline btn-sm">Next &raquo;</button>
   </div>
-</main>
 
-<!-- TX DETAIL MODAL -->
-<div class="modal-overlay" id="txModal" onclick="closeModal('txModal')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header"><h3>Transaction Detail</h3><button class="modal-close" onclick="closeModal('txModal')">&times;</button></div>
-    <div id="txModalBody"></div>
-  </div>
-</div>
+  <script src="config.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/wallet.js"></script>
 
-<div class="modal-overlay" id="walletModal" onclick="closeModal('walletModal')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header"><h3>Connect Wallet</h3><button class="modal-close" onclick="closeModal('walletModal')">&times;</button></div>
-    <div class="wallet-grid" id="walletGrid"></div>
-  </div>
-</div>
+  <script>
+    const TX_DATA = [
+      { type:"received", asset:"ETH", assetName:"Ethereum", color:"#627EEA", amount:"+1.2000", value:3840, chain:"Ethereum", party:"0x91c4...2ae1", time:"2m ago", hash:"0x8f71a9e2c4", fee:"$4.21", status:"Confirmed" },
+      { type:"swap", asset:"ARB", assetName:"Arbitrum", color:"#28A0F0", amount:"+1240", value:1537, chain:"Arbitrum", party:"1inch Router", time:"28m ago", hash:"0xb0aa19c2df", fee:"$2.10", status:"Confirmed" },
+      { type:"sent", asset:"USDC", assetName:"USD Coin", color:"#2775CA", amount:"-350.00", value:350, chain:"Ethereum", party:"0x5d2e...bd80", time:"1h ago", hash:"0x7fe1d3310b", fee:"$3.86", status:"Confirmed" },
+      { type:"mint", asset:"NFT", assetName:"Mint", color:"#ffd166", amount:"1 item", value:92, chain:"Polygon", party:"OpenSea", time:"3h ago", hash:"0x12ca7d981a", fee:"$0.42", status:"Confirmed" },
+      { type:"received", asset:"SOL", assetName:"Solana", color:"#14F195", amount:"+18.50", value:3372, chain:"Solana", party:"8hNs...uY3Z", time:"5h ago", hash:"4Gs8fH2LmNa", fee:"$0.01", status:"Finalized" },
+      { type:"sent", asset:"LINK", assetName:"Chainlink", color:"#2A5ADA", amount:"-120", value:2082, chain:"Ethereum", party:"0xf1ea...99b4", time:"8h ago", hash:"0x991aa3cbe1", fee:"$5.91", status:"Confirmed" },
+      { type:"swap", asset:"ETH→USDC", assetName:"Swap", color:"#8fb0ff", amount:"0.85 ETH", value:2710, chain:"Ethereum", party:"Uniswap", time:"11h ago", hash:"0x72cc192af3", fee:"$6.18", status:"Confirmed" },
+      { type:"received", asset:"BTC", assetName:"Bitcoin", color:"#F7931A", amount:"+0.042", value:2831, chain:"Ethereum", party:"WBTC Bridge", time:"1d ago", hash:"0x8b109acde1", fee:"$7.45", status:"Confirmed" },
+      { type:"mint", asset:"NFT", assetName:"Mint", color:"#ffd166", amount:"2 items", value:140, chain:"Polygon", party:"Zora", time:"1d ago", hash:"0x8af9810cb2", fee:"$0.19", status:"Confirmed" },
+      { type:"sent", asset:"SOL", assetName:"Solana", color:"#14F195", amount:"-12.4", value:2260, chain:"Solana", party:"7xKp...L2m", time:"2d ago", hash:"3Jq81LmPz2X", fee:"$0.01", status:"Finalized" },
+      { type:"received", asset:"USDC", assetName:"USD Coin", color:"#2775CA", amount:"+1800", value:1800, chain:"Arbitrum", party:"0xa2c7...4e77", time:"2d ago", hash:"0x24dd31a8cd", fee:"$0.64", status:"Confirmed" },
+      { type:"swap", asset:"SOL→JTO", assetName:"Swap", color:"#56BF99", amount:"32 SOL", value:5820, chain:"Solana", party:"Jupiter", time:"3d ago", hash:"8Kx2QpLm9Vn", fee:"$0.02", status:"Finalized" },
+      { type:"sent", asset:"ETH", assetName:"Ethereum", color:"#627EEA", amount:"-0.4200", value:1348, chain:"Ethereum", party:"Ledger Vault", time:"4d ago", hash:"0x78c21be0f4", fee:"$4.72", status:"Confirmed" },
+      { type:"received", asset:"ARB", assetName:"Arbitrum", color:"#28A0F0", amount:"+820", value:1016, chain:"Arbitrum", party:"0x7ba1...0ef3", time:"5d ago", hash:"0xaa71de3cb9", fee:"$0.52", status:"Confirmed" },
+      { type:"mint", asset:"NFT", assetName:"Mint", color:"#ffd166", amount:"1 item", value:76, chain:"Polygon", party:"BasePaint", time:"6d ago", hash:"0xde91af31bc", fee:"$0.11", status:"Confirmed" }
+    ];
 
-<nav class="mobile-nav">
-  <a href="dashboard.html" class="mobile-nav-item">&#128200;</a>
-  <a href="wallet.html" class="mobile-nav-item">&#128179;</a>
-  <a href="tokens.html" class="mobile-nav-item">&#128176;</a>
-  <a href="nft.html" class="mobile-nav-item">&#128444;</a>
-  <a href="analytics.html" class="mobile-nav-item">&#128202;</a>
-</nav>
+    let currentPage = 1;
+    const pageSize = 8;
+    let typeFilter = "all";
+    let chainFilter = "all";
+    let searchQuery = "";
+    let selectedTx = null;
 
-<div class="toast-container" id="toastContainer"></div>
+    function shortHash(hash) {
+      return hash.length > 12 ? hash.slice(0, 8) + "…" + hash.slice(-4) : hash;
+    }
 
-<script src="config.js"></script>
-<script src="assets/js/animations.js"></script>
-<script src="assets/js/wallet.js"></script>
-<script src="assets/js/main.js"></script>
-<script>
-const TXS = [
-  {id:1,type:'receive',asset:'ETH',amount:'+2.5 ETH',value:'+$8,026',chain:'ethereum',addr:'0x1a2b...3c4d',time:'2h ago',hash:'0xabc123...'},
-  {id:2,type:'send',asset:'USDC',amount:'-500 USDC',value:'-$500',chain:'ethereum',addr:'0x9f8e...7d6c',time:'5h ago',hash:'0xdef456...'},
-  {id:3,type:'swap',asset:'ETH→USDC',amount:'1.0 ETH',value:'$3,210',chain:'ethereum',addr:'Uniswap V3',time:'1d ago',hash:'0xghi789...'},
-  {id:4,type:'receive',asset:'SOL',amount:'+10 SOL',value:'+$1,823',chain:'solana',addr:'7xKp...mN2q',time:'2d ago',hash:'5xjk...'},
-  {id:5,type:'mint',asset:'BAYC',amount:'1 NFT',value:'$124,000',chain:'ethereum',addr:'BAYC Contract',time:'3d ago',hash:'0xmno...'},
-  {id:6,type:'send',asset:'ETH',amount:'-0.5 ETH',value:'-$1,605',chain:'ethereum',addr:'0x4f5e...6d7c',time:'4d ago',hash:'0xpqr...'},
-  {id:7,type:'swap',asset:'SOL→JTO',amount:'5 SOL',value:'$911',chain:'solana',addr:'Jupiter',time:'5d ago',hash:'8ylo...'},
-  {id:8,type:'receive',asset:'ARB',amount:'+2,400 ARB',value:'+$2,976',chain:'arbitrum',addr:'0x2b3c...4d5e',time:'6d ago',hash:'0xstu...'},
-  {id:9,type:'send',asset:'USDC',amount:'-1,000 USDC',value:'-$1,000',chain:'polygon',addr:'0x7c8d...9e0f',time:'7d ago',hash:'0xvwx...'},
-  {id:10,type:'swap',asset:'MATIC→ETH',amount:'5,000 MATIC',value:'$4,100',chain:'polygon',addr:'QuickSwap',time:'8d ago',hash:'0xyza...'},
-  {id:11,type:'receive',asset:'BTC',amount:'+0.02 BTC',value:'+$1,348',chain:'ethereum',addr:'0x3c4d...5e6f',time:'9d ago',hash:'0xbcd...'},
-  {id:12,type:'mint',asset:'CloneX',amount:'1 NFT',value:'$11,220',chain:'ethereum',addr:'CloneX Contract',time:'10d ago',hash:'0xefg...'},
-  {id:13,type:'send',asset:'SOL',amount:'-2 SOL',value:'-$365',chain:'solana',addr:'Bx9m...pQ2r',time:'11d ago',hash:'9kbm...'},
-  {id:14,type:'receive',asset:'JTO',amount:'+2,100 JTO',value:'+$9,387',chain:'solana',addr:'7xKp...mN2q',time:'12d ago',hash:'3rtg...'},
-  {id:15,type:'swap',asset:'ETH→WBTC',amount:'2.0 ETH',value:'$6,421',chain:'ethereum',addr:'1inch',time:'14d ago',hash:'0xhij...'},
-];
+    function filteredTxs() {
+      return TX_DATA.filter(tx => {
+        const typeMatch = typeFilter === "all" || tx.type === typeFilter;
+        const chainMatch = chainFilter === "all" || tx.chain === chainFilter;
+        const q = searchQuery.toLowerCase();
+        const searchMatch = !q || [tx.asset, tx.assetName, tx.party, tx.hash, tx.chain].join(" ").toLowerCase().includes(q);
+        return typeMatch && chainMatch && searchMatch;
+      });
+    }
 
-let filteredTx = [...TXS];
-let chainFilter = 'all';
+    function updateKpis(rows) {
+      const totalIn = rows.filter(t => t.type === "received").reduce((s,t) => s + t.value, 0);
+      const totalOut = rows.filter(t => t.type === "sent").reduce((s,t) => s + t.value, 0);
+      const gas = rows.reduce((s,t) => s + Number(String(t.fee).replace("$","")), 0);
+      document.getElementById("kpiTxCount").textContent = rows.length;
+      document.getElementById("kpiTxIn").textContent = "+$" + totalIn.toLocaleString();
+      document.getElementById("kpiTxOut").textContent = "-$" + totalOut.toLocaleString();
+      document.getElementById("kpiGasSpent").textContent = "$" + gas.toFixed(2);
+    }
 
-const typeColors = {receive:'badge-success', send:'badge-danger', swap:'badge-info', mint:'badge-warning'};
+    function renderDetail(tx) {
+      const grid = document.getElementById("txDetailGrid");
+      if (!tx) return;
+      grid.innerHTML = `
+        <div class="detail-item"><span>Status</span><strong>${tx.status}</strong></div>
+        <div class="detail-item"><span>Network</span><strong>${tx.chain}</strong></div>
+        <div class="detail-item"><span>Fee</span><strong>${tx.fee}</strong></div>
+        <div class="detail-item"><span>Explorer</span><strong><a class="hash-btn" href="#" onclick="event.preventDefault()">Open ↗</a></strong></div>
+      `;
+    }
 
-function renderTx(data) {
-  document.getElementById('txTbody').innerHTML = data.map(tx => `
-    <tr onclick="openTx(${tx.id})" style="cursor:pointer">
-      <td><span class="badge ${typeColors[tx.type]}">${tx.type}</span></td>
-      <td>${tx.asset}</td>
-      <td class="${tx.type==='receive'?'positive':tx.type==='send'?'negative':''}">${tx.amount}</td>
-      <td>${tx.value}</td>
-      <td><span class="badge badge-info">${tx.chain}</span></td>
-      <td class="text-muted" style="font-size:0.75rem">${tx.addr}</td>
-      <td class="text-muted">${tx.time}</td>
-      <td><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();copyHash('${tx.hash}')">Copy</button></td>
-    </tr>
-  `).join('');
-}
+    function renderTransactions() {
+      const rows = filteredTxs();
+      updateKpis(rows);
 
-function openTx(id) {
-  const tx = TXS.find(t => t.id === id);
-  document.getElementById('txModalBody').innerHTML = `
-    <div class="tx-detail">
-      <div class="nft-detail-row"><span>Type</span><span class="badge ${typeColors[tx.type]}">${tx.type}</span></div>
-      <div class="nft-detail-row"><span>Asset</span><span>${tx.asset}</span></div>
-      <div class="nft-detail-row"><span>Amount</span><span>${tx.amount}</span></div>
-      <div class="nft-detail-row"><span>Value</span><span>${tx.value}</span></div>
-      <div class="nft-detail-row"><span>Chain</span><span>${tx.chain}</span></div>
-      <div class="nft-detail-row"><span>From/To</span><span>${tx.addr}</span></div>
-      <div class="nft-detail-row"><span>Time</span><span>${tx.time}</span></div>
-      <div class="nft-detail-row"><span>TX Hash</span><span style="font-size:0.75rem">${tx.hash} <button class="btn btn-outline btn-xs" onclick="copyHash('${tx.hash}')">Copy</button></span></div>
-    </div>
-  `;
-  openModal('txModal');
-}
+      const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * pageSize;
+      const pageRows = rows.slice(start, start + pageSize);
 
-function filterTx(type, btn) {
-  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filteredTx = type === 'all' ? [...TXS] : TXS.filter(t => t.type === type);
-  renderTx(filteredTx);
-}
+      const tbody = document.getElementById("txTableBody");
+      tbody.innerHTML = pageRows.map(tx => `
+        <tr onclick='selectedTx=${JSON.stringify(tx).replace(/'/g,"&#39;")}; renderDetail(selectedTx)' style="cursor:pointer;">
+          <td><span class="type-badge type-${tx.type}">${tx.type[0].toUpperCase() + tx.type.slice(1)}</span></td>
+          <td>
+            <div class="asset-pill">
+              <span class="asset-icon" style="background:${tx.color}22;color:${tx.color};">${tx.asset.slice(0,3)}</span>
+              <div>
+                <div style="font-weight:600;color:#ebf2ff;">${tx.asset}</div>
+                <div style="font-size:12px;color:rgba(235,242,255,.42);">${tx.assetName}</div>
+              </div>
+            </div>
+          </td>
+          <td class="${tx.amount.startsWith('+') ? 'positive' : 'negative'}">${tx.amount}</td>
+          <td>$${tx.value.toLocaleString()}</td>
+          <td>${tx.chain}</td>
+          <td>${tx.party}</td>
+          <td>${tx.time}</td>
+          <td><a href="#" class="hash-btn" onclick="event.preventDefault()">${shortHash(tx.hash)}</a></td>
+        </tr>
+      `).join("");
 
-function filterChainTx(chain) {
-  chainFilter = chain;
-  renderTx(chain === 'all' ? filteredTx : filteredTx.filter(t => t.chain === chain));
-}
+      document.getElementById("pageLabel").textContent = `Page ${currentPage} of ${totalPages}`;
+      document.getElementById("prevPage").disabled = currentPage === 1;
+      document.getElementById("nextPage").disabled = currentPage === totalPages;
 
-function searchTx(val) {
-  const f = val.toLowerCase();
-  renderTx(filteredTx.filter(t => t.asset.toLowerCase().includes(f) || t.hash.toLowerCase().includes(f) || t.addr.toLowerCase().includes(f)));
-}
+      if (!selectedTx && pageRows[0]) {
+        selectedTx = pageRows[0];
+        renderDetail(selectedTx);
+      }
+    }
 
-function copyHash(hash) {
-  navigator.clipboard.writeText(hash);
-  showToast('TX Hash copied!', 'success');
-}
+    document.querySelectorAll("#typeFilters .filter-pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#typeFilters .filter-pill").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        typeFilter = btn.dataset.type;
+        currentPage = 1;
+        renderTransactions();
+      });
+    });
 
-function exportTxCSV() {
-  const rows = [['Type','Asset','Amount','Value','Chain','Address','Time','Hash']];
-  TXS.forEach(t => rows.push([t.type, t.asset, t.amount, t.value, t.chain, t.addr, t.time, t.hash]));
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv,' + encodeURIComponent(csv);
-  a.download = 'transactions.csv';
-  a.click();
-}
+    document.querySelectorAll("#chainFilters .filter-pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#chainFilters .filter-pill").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        chainFilter = btn.dataset.chain;
+        currentPage = 1;
+        renderTransactions();
+      });
+    });
 
-document.addEventListener('DOMContentLoaded', () => {
-  initParticles('particleCanvas');
-  initScrollReveal();
-  renderTx(TXS);
-});
-</script>
+    document.getElementById("txSearch").addEventListener("input", e => {
+      searchQuery = e.target.value || "";
+      currentPage = 1;
+      renderTransactions();
+    });
+
+    document.getElementById("prevPage").addEventListener("click", () => {
+      if (currentPage > 1) { currentPage--; renderTransactions(); }
+    });
+
+    document.getElementById("nextPage").addEventListener("click", () => {
+      currentPage++;
+      renderTransactions();
+    });
+
+    document.addEventListener("DOMContentLoaded", renderTransactions);
+  </script>
 </body>
 </html>
