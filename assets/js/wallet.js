@@ -1,479 +1,577 @@
 (function () {
-  const cfg = window.NEXVAULT_CONFIG || {};
+  'use strict';
+
+  /* ─── CONFIG ─────────────────────────────────────── */
+  const cfg      = window.NEXVAULT_CONFIG || {};
   const walletCfg = cfg.providers?.wallet || {};
-  const demoMap = cfg.demo?.fakeAddressMap || {};
+  const PROJECT_ID = walletCfg.projectId || '';
 
+  /* ─── STATE ──────────────────────────────────────── */
   const WalletStore = {
-    session: null,
-    provider: null,
-    family: null,
+    address : null,
+    family  : null,
     walletId: null,
-    walletName: null,
-    chain: null,
-    address: null,
-    mode: "demo"
+    provider: null,
+    mode    : 'idle'   // idle | connecting | connected | error
   };
 
-  const WalletUI = {
-    walletModal() {
-      return document.getElementById("walletModal");
-    },
+  /* ─── HELPERS ─────────────────────────────────────── */
+  function qs(sel, root) { return (root || document).querySelector(sel); }
+  function qsa(sel) { return [...document.querySelectorAll(sel)]; }
+  function byId(id) { return document.getElementById(id); }
 
-    walletGrid() {
-      return document.getElementById("walletGrid");
-    },
-
-    familyTabs() {
-      return [...document.querySelectorAll("[data-wallet-family]")];
-    },
-
-    connectTriggers() {
-      return [...document.querySelectorAll("[data-wallet-trigger]")];
-    },
-
-    familyLabel() {
-      return document.getElementById("selectedWalletFamily");
-    },
-
-    statusLabel() {
-      return document.getElementById("walletConnectStatus");
-    }
-  };
-
-  function setWalletStatus(text, tone = "neutral") {
-    const el = WalletUI.statusLabel();
+  function setStatus(text, tone) {
+    const el = byId('walletConnectStatus');
     if (!el) return;
     el.textContent = text;
-    el.dataset.tone = tone;
+    if (tone) el.dataset.tone = tone;
   }
 
-  function normalizeFamily(family) {
-    const allowed = new Set((cfg.chainFamilies || []).map((x) => x.key));
-    return allowed.has(family) ? family : (cfg.ui?.defaultFamily || "evm");
-  }
-
-  function getFamilyWallets(family) {
-    return (cfg.walletGroups || []).find((group) => group.family === family)?.wallets || [];
-  }
-
-  function getWalletMeta(family, walletId) {
-    return getFamilyWallets(family).find((w) => w.id === walletId) || null;
-  }
-
-  function getDefaultChainForFamily(family) {
-    const chain = (cfg.chains || []).find((c) => c.family === family && c.enabled);
-    return chain || null;
-  }
-
-  function getInjectedProvider(walletId) {
-    const eth = window.ethereum;
-    if (!eth) return null;
-
-    if (walletId === "metamask") {
-      if (eth.providers?.length) {
-        return eth.providers.find((p) => p.isMetaMask) || null;
-      }
-      return eth.isMetaMask ? eth : null;
-    }
-
-    if (walletId === "rabby") {
-      if (eth.providers?.length) {
-        return eth.providers.find((p) => p.isRabby) || null;
-      }
-      return eth.isRabby ? eth : null;
-    }
-
-    if (walletId === "coinbase") {
-      if (eth.providers?.length) {
-        return eth.providers.find((p) => p.isCoinbaseWallet) || null;
-      }
-      return eth.isCoinbaseWallet ? eth : null;
-    }
-
-    if (walletId === "phantom") {
-      return window.phantom?.ethereum || (window.ethereum?.isPhantom ? window.ethereum : null);
-    }
-
-    if (walletId === "backpack") {
-      return window.backpack?.ethereum || null;
-    }
-
-    if (walletId === "solflare") {
-      return window.solflare?.ethereum || null;
-    }
-
-    return eth;
-  }
-
-  function cleanupProviderListeners() {
-    if (!WalletStore.provider || !WalletStore.provider.removeListener) return;
-
-    WalletStore.provider.removeListener("accountsChanged", handleAccountsChanged);
-    WalletStore.provider.removeListener("chainChanged", handleChainChanged);
-    WalletStore.provider.removeListener("disconnect", handleDisconnect);
-  }
-
-  function bindProviderListeners(provider) {
-    if (!provider || !provider.on) return;
-
-    provider.on("accountsChanged", handleAccountsChanged);
-    provider.on("chainChanged", handleChainChanged);
-    provider.on("disconnect", handleDisconnect);
-  }
-
-  async function handleAccountsChanged(accounts) {
-    const next = Array.isArray(accounts) ? accounts[0] : null;
-
-    if (!next) {
-      disconnectWallet(false);
+  /* ─── INJECTED WALLET (MetaMask / Rabby / Coinbase) ─ */
+  async function connectInjected(walletId) {
+    if (!window.ethereum) {
+      if (window.Toast) window.Toast.error('No injected wallet found. Install MetaMask or Rabby.');
+      setStatus('Wallet extension not found.', 'error');
       return;
     }
 
-    WalletStore.address = next;
-    if (window.AppState) {
-      window.AppState.address = next;
-      window.AppState.connected = true;
-    }
-
-    syncGlobalWalletState();
-    if (typeof window.updateWalletUI === "function") window.updateWalletUI();
-    if (typeof window.hydratePortfolio === "function") await window.hydratePortfolio();
-  }
-
-  async function handleChainChanged(chainId) {
-    WalletStore.chain = chainId;
-    const mapped = mapChainIdToConfig(chainId, WalletStore.family);
-
-    if (window.AppState) {
-      window.AppState.chain = mapped?.id || chainId;
-    }
-
-    syncGlobalWalletState();
-    if (typeof window.updateWalletUI === "function") window.updateWalletUI();
-    if (typeof window.hydratePortfolio === "function") await window.hydratePortfolio();
-  }
-
-  function handleDisconnect() {
-    disconnectWallet(false);
-  }
-
-  function mapChainIdToConfig(chainId, family = "evm") {
-    if (!chainId) return getDefaultChainForFamily(family);
-
-    const normalizedHex = typeof chainId === "string" ? chainId.toLowerCase() : `0x${Number(chainId).toString(16)}`;
-    const numeric = Number.parseInt(normalizedHex, 16);
-
-    return (cfg.chains || []).find((chain) => {
-      if (family && chain.family !== family) return false;
-      return chain.chainId === numeric || chain.caip === chainId || chain.id === chainId;
-    }) || getDefaultChainForFamily(family);
-  }
-
-  async function connectInjectedEvm(walletId, family) {
-    const provider = getInjectedProvider(walletId);
-
-    if (!provider?.request) {
-      throw new Error("Injected wallet not found");
-    }
-
-    const accounts = await provider.request({ method: "eth_requestAccounts" });
-    const chainId = await provider.request({ method: "eth_chainId" });
-
-    cleanupProviderListeners();
-    WalletStore.provider = provider;
-    WalletStore.address = accounts?.[0] || null;
-    WalletStore.chain = chainId;
-    WalletStore.family = family;
-    WalletStore.mode = "live";
-
-    bindProviderListeners(provider);
-
-    return {
-      address: WalletStore.address,
-      chain: mapChainIdToConfig(chainId, family),
-      providerType: "injected"
-    };
-  }
-
-  async function connectSolanaLike(walletId, family) {
-    const provider =
-      window.phantom?.solana ||
-      window.backpack?.solana ||
-      window.solflare ||
-      null;
-
-    if (provider?.connect) {
-      const res = await provider.connect();
-      const address =
-        res?.publicKey?.toString?.() ||
-        provider?.publicKey?.toString?.() ||
-        null;
-
-      WalletStore.provider = provider;
-      WalletStore.address = address;
-      WalletStore.chain = "solana:mainnet";
-      WalletStore.family = family;
-      WalletStore.mode = address ? "live" : "demo";
-
-      return {
-        address,
-        chain: getDefaultChainForFamily("solana"),
-        providerType: "solana-injected"
-      };
-    }
-
-    throw new Error("Solana wallet not found");
-  }
-
-  async function connectWalletConnectUniversal(walletId, family) {
-    const projectId = walletCfg.projectId;
-    if (!projectId || projectId.includes("REPLACE_WITH")) {
-      return connectDemoWallet(walletId, family, "WalletConnect projectId missing");
-    }
-
-    setWalletStatus("WalletConnect setup required in app bundle", "warn");
-
-    return connectDemoWallet(walletId, family, "Universal bridge placeholder");
-  }
-
-  function connectDemoWallet(walletId, family, reason = "Demo mode") {
-    const fallbackAddress =
-      demoMap[walletId] ||
-      demoMap.walletconnect ||
-      "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
-
-    WalletStore.provider = null;
-    WalletStore.address = fallbackAddress;
-    WalletStore.family = family;
-    WalletStore.chain = getDefaultChainForFamily(family)?.id || family;
-    WalletStore.mode = "demo";
-
-    return {
-      address: fallbackAddress,
-      chain: getDefaultChainForFamily(family),
-      providerType: "demo",
-      reason
-    };
-  }
-
-  function syncGlobalWalletState() {
-    const meta = getWalletMeta(WalletStore.family, WalletStore.walletId);
-
-    if (!window.AppState) return;
-
-    window.AppState.wallet = meta?.name || WalletStore.walletName || "Wallet";
-    window.AppState.address = WalletStore.address;
-    window.AppState.family = WalletStore.family;
-    window.AppState.chain = mapChainIdToConfig(WalletStore.chain, WalletStore.family)?.id || WalletStore.chain;
-    window.AppState.connected = Boolean(WalletStore.address);
-    window.AppState.mode = WalletStore.mode;
-  }
-
-  function persistSession() {
-    window.__NEXVAULT_WALLET_SESSION__ = {
-      walletId: WalletStore.walletId,
-      walletName: WalletStore.walletName,
-      family: WalletStore.family,
-      chain: WalletStore.chain,
-      address: WalletStore.address,
-      mode: WalletStore.mode
-    };
-  }
-
-  function restoreSession() {
-    const session = window.__NEXVAULT_WALLET_SESSION__;
-    if (!session?.address) return false;
-
-    WalletStore.walletId = session.walletId;
-    WalletStore.walletName = session.walletName;
-    WalletStore.family = session.family;
-    WalletStore.chain = session.chain;
-    WalletStore.address = session.address;
-    WalletStore.mode = session.mode || "demo";
-
-    syncGlobalWalletState();
-    if (typeof window.updateWalletUI === "function") window.updateWalletUI();
-    return true;
-  }
-
-  function disconnectWallet(showToast = true) {
-    cleanupProviderListeners();
-
-    WalletStore.provider = null;
-    WalletStore.walletId = null;
-    WalletStore.walletName = null;
-    WalletStore.family = cfg.ui?.defaultFamily || "evm";
-    WalletStore.chain = null;
-    WalletStore.address = null;
-    WalletStore.mode = "demo";
-
-    window.__NEXVAULT_WALLET_SESSION__ = null;
-
-    if (window.AppState) {
-      window.AppState.wallet = null;
-      window.AppState.address = null;
-      window.AppState.family = null;
-      window.AppState.chain = null;
-      window.AppState.connected = false;
-      window.AppState.mode = "demo";
-    }
-
-    if (typeof window.updateWalletUI === "function") window.updateWalletUI();
-    if (typeof window.hydratePortfolio === "function") window.hydratePortfolio();
-
-    setWalletStatus("Disconnected", "neutral");
-    if (showToast && window.Toast) window.Toast.info("Wallet disconnected");
-  }
-
-  function setActiveFamilyTab(family) {
-    WalletUI.familyTabs().forEach((tab) => {
-      const active = tab.dataset.walletFamily === family;
-      tab.classList.toggle("active", active);
-      tab.setAttribute("aria-selected", active ? "true" : "false");
-    });
-
-    const label = WalletUI.familyLabel();
-    if (label) {
-      const familyMeta = (cfg.chainFamilies || []).find((x) => x.key === family);
-      label.textContent = familyMeta?.name || family;
-    }
-  }
-
-  function renderWalletGrid(family) {
-    const grid = WalletUI.walletGrid();
-    if (!grid) return;
-
-    const wallets = getFamilyWallets(family);
-
-    grid.innerHTML = wallets.map((wallet) => `
-      <button
-        type="button"
-        class="wallet-option reveal"
-        data-wallet-id="${wallet.id}"
-        data-wallet-family="${family}"
-        aria-label="Connect ${wallet.name}"
-      >
-        <span class="wallet-option-mark" style="--wallet-accent:${wallet.accent || "#3B99FC"}">
-          ${wallet.short || wallet.name.slice(0, 2).toUpperCase()}
-        </span>
-        <span class="wallet-option-copy">
-          <strong>${wallet.name}</strong>
-          <small>${wallet.mode === "universal" ? "Universal session" : wallet.mode === "injected" ? "Browser wallet" : "Custom bridge"}</small>
-        </span>
-        <span class="wallet-option-arrow">→</span>
-      </button>
-    `).join("");
-
-    [...grid.querySelectorAll("[data-wallet-id]")].forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const walletId = btn.dataset.walletId;
-        const walletFamily = btn.dataset.walletFamily;
-        connectWallet(walletId, walletFamily);
-      });
-    });
-  }
-
-  async function connectWallet(walletId, family) {
-    const normalizedFamily = normalizeFamily(family);
-    const meta = getWalletMeta(normalizedFamily, walletId);
-
-    WalletStore.walletId = walletId;
-    WalletStore.walletName = meta?.name || walletId;
-    WalletStore.family = normalizedFamily;
-
-    setWalletStatus(`Connecting ${meta?.name || walletId}...`, "loading");
+    setStatus('Requesting account access…', 'pending');
+    WalletStore.mode = 'connecting';
 
     try {
-      let result;
+      let provider = window.ethereum;
 
-      if (meta?.mode === "universal") {
-        result = await connectWalletConnectUniversal(walletId, normalizedFamily);
-      } else if (normalizedFamily === "solana" && ["phantom", "backpack", "solflare"].includes(walletId)) {
-        result = await connectSolanaLike(walletId, normalizedFamily);
-      } else if (meta?.mode === "injected") {
-        result = await connectInjectedEvm(walletId, normalizedFamily);
-      } else {
-        result = connectDemoWallet(walletId, normalizedFamily, "Custom wallet bridge pending");
+      // If multiple injected wallets exist, pick the right one
+      if (window.ethereum.providers?.length) {
+        const map = {
+          metamask: (p) => p.isMetaMask && !p.isRabby,
+          rabby   : (p) => p.isRabby,
+          coinbase: (p) => p.isCoinbaseWallet
+        };
+        const match = window.ethereum.providers.find(map[walletId] || (() => true));
+        if (match) provider = match;
       }
 
-      WalletStore.address = result?.address || null;
-      WalletStore.chain = result?.chain?.id || result?.chain?.caip || result?.chain || WalletStore.chain;
-      WalletStore.mode = result?.providerType === "demo" ? "demo" : WalletStore.mode || "live";
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+      if (!accounts?.[0]) throw new Error('No accounts returned');
 
-      syncGlobalWalletState();
-      persistSession();
+      const chainHex = await provider.request({ method: 'eth_chainId' });
+      const chainId  = parseInt(chainHex, 16);
 
-      if (typeof window.updateWalletUI === "function") window.updateWalletUI();
-      if (typeof window.closeModal === "function") window.closeModal("walletModal");
-      if (typeof window.hydratePortfolio === "function") await window.hydratePortfolio();
+      WalletStore.address  = accounts[0];
+      WalletStore.family   = 'evm';
+      WalletStore.walletId = walletId;
+      WalletStore.provider = provider;
+      WalletStore.mode     = 'connected';
 
-      if (WalletStore.mode === "demo") {
-        setWalletStatus("Connected in demo-safe mode", "warn");
-        window.Toast?.warn(result?.reason || "Demo wallet connected");
-      } else {
-        setWalletStatus("Wallet connected", "success");
-        window.Toast?.success(`${meta?.name || "Wallet"} connected`);
-      }
+      onConnected({ address: accounts[0], family: 'evm', walletId, chainId });
+
+      // Listen for account/chain changes
+      provider.on('accountsChanged', (accs) => {
+        if (accs[0]) onConnected({ address: accs[0], family: 'evm', walletId, chainId });
+        else handleDisconnect();
+      });
+      provider.on('chainChanged', () => window.location.reload());
+
     } catch (err) {
-      console.error(err);
-      setWalletStatus("Connection failed", "error");
-      window.Toast?.error(err?.message || "Wallet connection failed");
+      const msg = err.code === 4001 ? 'Connection rejected by user.' : (err.message || 'Connection failed.');
+      setStatus(msg, 'error');
+      if (window.Toast) window.Toast.error(msg);
+      WalletStore.mode = 'error';
     }
   }
 
-  function attachWalletTriggers() {
-    WalletUI.connectTriggers().forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (typeof window.openModal === "function") {
-          window.openModal("walletModal");
+  /* ─── PHANTOM / SOLANA ───────────────────────────── */
+  async function connectPhantom() {
+    const sol = window.phantom?.solana || window.solana;
+    if (!sol?.isPhantom) {
+      if (window.Toast) window.Toast.error('Phantom wallet not found. Install the extension.');
+      setStatus('Phantom not installed.', 'error');
+      return;
+    }
+
+    setStatus('Connecting to Phantom…', 'pending');
+    WalletStore.mode = 'connecting';
+
+    try {
+      const resp = await sol.connect();
+      const address = resp.publicKey.toString();
+
+      WalletStore.address  = address;
+      WalletStore.family   = 'solana';
+      WalletStore.walletId = 'phantom';
+      WalletStore.provider = sol;
+      WalletStore.mode     = 'connected';
+
+      onConnected({ address, family: 'solana', walletId: 'phantom' });
+
+      sol.on('disconnect', handleDisconnect);
+      sol.on('accountChanged', (key) => {
+        if (key) onConnected({ address: key.toString(), family: 'solana', walletId: 'phantom' });
+        else handleDisconnect();
+      });
+
+    } catch (err) {
+      const msg = err.message || 'Phantom connection failed.';
+      setStatus(msg, 'error');
+      if (window.Toast) window.Toast.error(msg);
+      WalletStore.mode = 'error';
+    }
+  }
+
+  /* ─── SOLFLARE ───────────────────────────────────── */
+  async function connectSolflare() {
+    const sf = window.solflare;
+    if (!sf) {
+      if (window.Toast) window.Toast.error('Solflare wallet not found.');
+      setStatus('Solflare not installed.', 'error');
+      return;
+    }
+
+    setStatus('Connecting to Solflare…', 'pending');
+    WalletStore.mode = 'connecting';
+
+    try {
+      await sf.connect();
+      const address = sf.publicKey.toString();
+
+      WalletStore.address  = address;
+      WalletStore.family   = 'solana';
+      WalletStore.walletId = 'solflare';
+      WalletStore.provider = sf;
+      WalletStore.mode     = 'connected';
+
+      onConnected({ address, family: 'solana', walletId: 'solflare' });
+    } catch (err) {
+      setStatus(err.message || 'Solflare connection failed.', 'error');
+      WalletStore.mode = 'error';
+    }
+  }
+
+  /* ─── WALLETCONNECT / REOWN APPKIT ──────────────── */
+  async function connectWalletConnect(family) {
+    if (!PROJECT_ID || PROJECT_ID.includes('REPLACE')) {
+      if (window.Toast) window.Toast.error('Set your Reown projectId in config.js first.');
+      setStatus('projectId missing in config.js', 'error');
+      return;
+    }
+
+    setStatus('Opening WalletConnect…', 'pending');
+    WalletStore.mode = 'connecting';
+
+    try {
+      // Use Reown AppKit if createAppKit is globally available (loaded via <script> in HTML)
+      if (window.createAppKit) {
+        const chains = [
+          { id: 1,     name: 'Ethereum', nativeCurrency: { name:'Ether', symbol:'ETH', decimals:18 }, rpcUrls:{ default:{ http:['https://cloudflare-eth.com'] } } },
+          { id: 8453,  name: 'Base', nativeCurrency: { name:'Ether', symbol:'ETH', decimals:18 }, rpcUrls:{ default:{ http:['https://mainnet.base.org'] } } },
+          { id: 42161, name: 'Arbitrum', nativeCurrency: { name:'Ether', symbol:'ETH', decimals:18 }, rpcUrls:{ default:{ http:['https://arb1.arbitrum.io/rpc'] } } },
+          { id: 10,    name: 'Optimism', nativeCurrency: { name:'Ether', symbol:'ETH', decimals:18 }, rpcUrls:{ default:{ http:['https://mainnet.optimism.io'] } } },
+          { id: 137,   name: 'Polygon', nativeCurrency: { name:'POL', symbol:'POL', decimals:18 }, rpcUrls:{ default:{ http:['https://polygon-rpc.com'] } } },
+        ];
+
+        if (!window.__nexvault_appkit__) {
+          const { createAppKit: cak } = await import('https://esm.sh/@reown/appkit@1.6.8');
+          const { WagmiAdapter }       = await import('https://esm.sh/@reown/appkit-adapter-wagmi@1.6.8');
+          const adapter = new WagmiAdapter({ networks: chains, projectId: PROJECT_ID });
+
+          window.__nexvault_appkit__ = cak({
+            adapters    : [adapter],
+            networks    : chains,
+            projectId   : PROJECT_ID,
+            metadata    : walletCfg.metadata || {
+              name       : 'NexVault',
+              description: 'Multi-chain portfolio dashboard',
+              url        : window.location.origin,
+              icons      : ['/favicon.ico']
+            },
+            themeMode      : 'dark',
+            themeVariables : {
+              '--w3m-accent'               : '#00d4aa',
+              '--w3m-border-radius-master' : '14px'
+            }
+          });
+        }
+
+        window.__nexvault_appkit__.open({ view: 'Connect' });
+
+        // Poll for connection state (AppKit does not emit DOM events in vanilla HTML)
+        let attempts = 0;
+        const poll = setInterval(async () => {
+          attempts++;
+          try {
+            const state = window.__nexvault_appkit__.getState?.();
+            if (state?.selectedNetworkId && state?.address) {
+              clearInterval(poll);
+              WalletStore.address  = state.address;
+              WalletStore.family   = 'evm';
+              WalletStore.walletId = 'walletconnect';
+              WalletStore.mode     = 'connected';
+              onConnected({ address: state.address, family: 'evm', walletId: 'walletconnect' });
+            }
+          } catch (_) {}
+          if (attempts > 60) {
+            clearInterval(poll);
+            if (WalletStore.mode === 'connecting') {
+              setStatus('Connection timed out. Try again.', 'error');
+              WalletStore.mode = 'idle';
+            }
+          }
+        }, 1000);
+        return;
+      }
+
+      // Fallback: load WalletConnect EthereumProvider directly via ESM
+      const { EthereumProvider } = await import('https://esm.sh/@walletconnect/ethereum-provider@2.17.0');
+      const wcp = await EthereumProvider.init({
+        projectId     : PROJECT_ID,
+        chains        : [1],
+        optionalChains: [8453, 42161, 10, 137, 56],
+        showQrModal   : true,
+        metadata      : walletCfg.metadata || {
+          name       : 'NexVault',
+          description: 'Multi-chain portfolio dashboard',
+          url        : window.location.origin,
+          icons      : ['/favicon.ico']
         }
       });
-    });
 
-    document.querySelectorAll("[data-wallet-disconnect]").forEach((btn) => {
-      btn.addEventListener("click", () => disconnectWallet(true));
-    });
+      await wcp.connect();
+      const accounts = await wcp.request({ method: 'eth_accounts' });
+      if (!accounts?.[0]) throw new Error('No accounts from WalletConnect');
 
-    document.querySelectorAll("[data-copy-wallet]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (window.AppState?.address) window.Utils?.copy(window.AppState.address, "Wallet address copied");
+      WalletStore.address  = accounts[0];
+      WalletStore.family   = family || 'evm';
+      WalletStore.walletId = 'walletconnect';
+      WalletStore.provider = wcp;
+      WalletStore.mode     = 'connected';
+
+      onConnected({ address: accounts[0], family: 'evm', walletId: 'walletconnect' });
+
+      wcp.on('accountsChanged', (a) => {
+        if (a?.[0]) onConnected({ address: a[0], family: 'evm', walletId: 'walletconnect' });
+      });
+      wcp.on('disconnect', handleDisconnect);
+
+    } catch (err) {
+      if (err?.message?.includes('User rejected') || err?.code === 4001) {
+        setStatus('Rejected by user.', 'error');
+      } else {
+        setStatus(err?.message || 'WalletConnect failed.', 'error');
+        if (window.Toast) window.Toast.error(err?.message || 'WalletConnect failed.');
+      }
+      WalletStore.mode = 'error';
+    }
+  }
+
+  /* ─── ON CONNECTED ───────────────────────────────── */
+  function onConnected({ address, family, walletId, chainId }) {
+    WalletStore.address  = address;
+    WalletStore.family   = family;
+    WalletStore.walletId = walletId;
+    WalletStore.mode     = 'connected';
+
+    // Sync into AppState (used by main.js / dashboard.js)
+    if (window.AppState) {
+      window.AppState.connected = true;
+      window.AppState.address   = address;
+      window.AppState.family    = family;
+      window.AppState.wallet    = walletId;
+      window.AppState.chain     = chainId || null;
+      window.AppState.mode      = 'live';
+    }
+
+    closeWalletModal();
+    updateWalletButtonsUI(address);
+
+    if (window.Toast) window.Toast.success(`Connected: ${address.slice(0, 6)}…${address.slice(-4)}`);
+    setStatus('Connected ✓', 'success');
+
+    // Trigger portfolio data reload
+    if (typeof window.hydratePortfolio === 'function') window.hydratePortfolio();
+    if (typeof window.updateWalletUI  === 'function') window.updateWalletUI();
+
+    document.dispatchEvent(new CustomEvent('nexvault:connected', {
+      detail: { address, family, walletId }
+    }));
+  }
+
+  /* ─── DISCONNECT ─────────────────────────────────── */
+  function handleDisconnect() {
+    WalletStore.address  = null;
+    WalletStore.family   = null;
+    WalletStore.walletId = null;
+    WalletStore.provider = null;
+    WalletStore.mode     = 'idle';
+
+    if (window.AppState) {
+      window.AppState.connected = false;
+      window.AppState.address   = null;
+      window.AppState.family    = null;
+      window.AppState.wallet    = null;
+      window.AppState.mode      = 'demo';
+    }
+
+    updateWalletButtonsUI(null);
+    if (typeof window.updateWalletUI === 'function') window.updateWalletUI();
+    if (window.Toast) window.Toast.info('Wallet disconnected.');
+    document.dispatchEvent(new CustomEvent('nexvault:disconnected'));
+  }
+
+  /* ─── UPDATE CONNECT BUTTON TEXT ─────────────────── */
+  function updateWalletButtonsUI(address) {
+    qsa('[data-wallet-trigger]').forEach((btn) => {
+      if (address) {
+        btn.textContent = `${address.slice(0, 6)}…${address.slice(-4)}`;
+        btn.title = 'Click to disconnect';
+      } else {
+        btn.innerHTML = '<span aria-hidden="true">⬡</span> Connect Wallet';
+        btn.title = '';
+      }
+    });
+  }
+
+  /* ─── MODAL WALLET GRID ──────────────────────────── */
+  function renderWalletGrid(family) {
+    const grid = byId('walletGrid');
+    if (!grid) return;
+
+    const wallets = defaultWalletsForFamily(family);
+
+    grid.innerHTML = wallets.map((w) => `
+      <button
+        type="button"
+        class="wallet-option-btn"
+        data-wallet-id="${w.id}"
+        data-wallet-family="${family}"
+        aria-label="Connect with ${w.name}"
+      >
+        <span class="wallet-option-icon" style="background:${w.accent}22;border:1px solid ${w.accent}44;">
+          ${walletIcon(w.id)}
+        </span>
+        <span class="wallet-option-name">${w.name}</span>
+        <span class="wallet-option-arrow">→</span>
+      </button>
+    `).join('');
+
+    grid.querySelectorAll('.wallet-option-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id  = btn.dataset.walletId;
+        const fam = btn.dataset.walletFamily;
+        dispatchConnect(id, fam);
       });
     });
   }
 
-  function attachFamilyTabs() {
-    WalletUI.familyTabs().forEach((tab) => {
-      tab.addEventListener("click", () => {
-        const family = normalizeFamily(tab.dataset.walletFamily);
-        setActiveFamilyTab(family);
-        renderWalletGrid(family);
+  function defaultWalletsForFamily(family) {
+    const defaults = {
+      evm    : [
+        { id: 'walletconnect', name: 'WalletConnect', accent: '#3B99FC' },
+        { id: 'metamask',      name: 'MetaMask',      accent: '#F6851B' },
+        { id: 'rabby',         name: 'Rabby',          accent: '#F4C542' },
+        { id: 'coinbase',      name: 'Coinbase Wallet',accent: '#0052FF' },
+      ],
+      solana : [
+        { id: 'walletconnect', name: 'WalletConnect', accent: '#3B99FC' },
+        { id: 'phantom',       name: 'Phantom',        accent: '#AB9FF2' },
+        { id: 'solflare',      name: 'Solflare',       accent: '#FCB045' },
+      ],
+      bitcoin: [
+        { id: 'walletconnect', name: 'WalletConnect', accent: '#3B99FC' },
+      ],
+      tron   : [{ id: 'walletconnect', name: 'WalletConnect', accent: '#3B99FC' }],
+      ton    : [{ id: 'walletconnect', name: 'WalletConnect', accent: '#0098EA' }],
+    };
+    return defaults[family] || defaults.evm;
+  }
+
+  function walletIcon(id) {
+    const icons = {
+      metamask     : '🦊',
+      rabby        : '🐰',
+      coinbase     : '🔵',
+      phantom      : '👻',
+      solflare     : '🌟',
+      backpack     : '🎒',
+      walletconnect: '<svg width="20" height="20" viewBox="0 0 32 32" fill="none"><path d="M9.58 12.25c3.54-3.47 9.28-3.47 12.82 0l.43.42a.44.44 0 0 1 0 .63l-1.46 1.43a.23.23 0 0 1-.32 0l-.59-.57c-2.47-2.42-6.47-2.42-8.94 0l-.63.62a.23.23 0 0 1-.32 0L9.11 13.3a.44.44 0 0 1 0-.63l.47-.42Zm15.82 2.95 1.3 1.27a.44.44 0 0 1 0 .63l-5.85 5.73a.46.46 0 0 1-.64 0l-4.15-4.07a.12.12 0 0 0-.16 0l-4.15 4.07a.46.46 0 0 1-.64 0L5.28 17.1a.44.44 0 0 1 0-.63l1.3-1.27a.46.46 0 0 1 .64 0l4.15 4.07c.04.04.12.04.16 0l4.15-4.07a.46.46 0 0 1 .64 0l4.15 4.07c.04.04.12.04.16 0l4.15-4.07a.46.46 0 0 1 .64 0Z" fill="#3B99FC"/></svg>',
+      ledger       : '🔑',
+      trust        : '🛡',
+      xverse       : '₿',
+      unisat       : '🟠',
+      tronlink     : '◉',
+      tonkeeper    : '💎',
+    };
+    return icons[id] || '🔗';
+  }
+
+  function dispatchConnect(id, family) {
+    setStatus('Connecting…', 'pending');
+
+    if (id === 'phantom') {
+      connectPhantom();
+    } else if (id === 'solflare') {
+      connectSolflare();
+    } else if (['metamask', 'rabby', 'coinbase'].includes(id)) {
+      connectInjected(id);
+    } else {
+      // walletconnect or any other
+      connectWalletConnect(family);
+    }
+  }
+
+  /* ─── FAMILY TABS ─────────────────────────────────── */
+  function initFamilyTabs() {
+    const tabs = qsa('#walletFamilyTabs [data-wallet-family]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+        renderWalletGrid(tab.dataset.walletFamily);
       });
     });
   }
 
-  function bootWalletModal() {
-    const defaultFamily = normalizeFamily(cfg.ui?.defaultFamily || "evm");
-    setActiveFamilyTab(defaultFamily);
-    renderWalletGrid(defaultFamily);
-    setWalletStatus("Choose a wallet to continue", "neutral");
+  /* ─── MODAL OPEN / CLOSE ──────────────────────────── */
+  function openWalletModal() {
+    const modal = byId('walletModal');
+    if (!modal) return;
+    if (typeof window.openModal === 'function') {
+      window.openModal('walletModal');
+    } else {
+      modal.classList.add('active');
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    renderWalletGrid('evm');
+    initFamilyTabs();
+    setStatus('Choose a wallet to continue');
   }
 
-  window.openWalletModal = function (family) {
-    const selected = normalizeFamily(family || window.AppState?.family || cfg.ui?.defaultFamily || "evm");
-    setActiveFamilyTab(selected);
-    renderWalletGrid(selected);
-    if (typeof window.openModal === "function") window.openModal("walletModal");
+  function closeWalletModal() {
+    const modal = byId('walletModal');
+    if (!modal) return;
+    if (typeof window.closeModal === 'function') {
+      window.closeModal('walletModal');
+    } else {
+      modal.classList.remove('active');
+      modal.style.display = '';
+      document.body.style.overflow = '';
+    }
+  }
+
+  /* ─── TRIGGER BUTTONS ─────────────────────────────── */
+  function initTriggers() {
+    qsa('[data-wallet-trigger]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (WalletStore.mode === 'connected') {
+          if (window.confirm('Disconnect wallet?')) handleDisconnect();
+          return;
+        }
+        openWalletModal();
+      });
+    });
+
+    qsa('[data-wallet-disconnect]').forEach((btn) => {
+      btn.addEventListener('click', handleDisconnect);
+    });
+  }
+
+  /* ─── MODAL CLOSE ON BACKDROP ─────────────────────── */
+  function initModalBackdrop() {
+    const modal = byId('walletModal');
+    if (!modal) return;
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeWalletModal();
+    });
+  }
+
+  /* ─── AUTO-RECONNECT ON PAGE LOAD ────────────────── */
+  async function tryAutoReconnect() {
+    if (!window.ethereum) return;
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts?.[0]) {
+        WalletStore.mode = 'connected';
+        onConnected({ address: accounts[0], family: 'evm', walletId: 'injected' });
+      }
+    } catch (_) {}
+  }
+
+  /* ─── INJECT GRID STYLES ──────────────────────────── */
+  function injectWalletStyles() {
+    if (byId('nexvault-wallet-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'nexvault-wallet-styles';
+    style.textContent = `
+      .wallet-option-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: rgba(235,242,255,0.9);
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 180ms ease, border-color 180ms ease, transform 150ms ease;
+        text-align: left;
+      }
+      .wallet-option-btn:hover {
+        background: rgba(255,255,255,0.07);
+        border-color: rgba(255,255,255,0.16);
+        transform: translateY(-1px);
+      }
+      .wallet-option-btn:active { transform: scale(0.98); }
+      .wallet-option-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+      .wallet-option-name { flex: 1; }
+      .wallet-option-arrow { color: rgba(235,242,255,0.3); font-size: 14px; }
+      #walletGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 4px 0;
+      }
+      @media (max-width: 480px) { #walletGrid { grid-template-columns: 1fr; } }
+      #walletConnectStatus[data-tone="success"] { color: #00d4aa; }
+      #walletConnectStatus[data-tone="error"]   { color: #ff6b6b; }
+      #walletConnectStatus[data-tone="pending"] { color: rgba(235,242,255,0.5); }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /* ─── INIT ────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
+    injectWalletStyles();
+    initTriggers();
+    initModalBackdrop();
+    tryAutoReconnect();
+  });
+
+  /* ─── PUBLIC API ──────────────────────────────────── */
+  window.NexVaultWallet = {
+    connect     : dispatchConnect,
+    disconnect  : handleDisconnect,
+    getState    : () => ({ ...WalletStore }),
+    isConnected : () => WalletStore.mode === 'connected',
+    openModal   : openWalletModal,
+    closeModal  : closeWalletModal,
   };
 
-  window.disconnectWallet = disconnectWallet;
+  // Backwards compat
+  window.openWalletModal   = openWalletModal;
+  window.disconnectWallet  = handleDisconnect;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    attachWalletTriggers();
-    attachFamilyTabs();
-    bootWalletModal();
-
-    if (restoreSession()) {
-      setWalletStatus("Session restored", "success");
-    }
-  });
 })();
