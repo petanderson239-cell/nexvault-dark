@@ -27,7 +27,7 @@ window.NEXVAULT_CONFIG = {
   providers: {
     wallet: {
       primary: "walletconnect",
-      projectId: "REPLACE_WITH_WALLETCONNECT_PROJECT_ID",
+      projectId: "a785da105621eb55c998a35c57587667",
       metadata: {
         name: "NexVault",
         description: "Universal multi-chain portfolio intelligence platform",
