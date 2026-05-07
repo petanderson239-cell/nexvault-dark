@@ -18,7 +18,7 @@ window.NEXVAULT_CONFIG = {
     realNFTs: true,
     publicPriceFallback: true,
     backendProxy: true,
-    demoSeedData: true,
+    demoSeedData: false,
     explorerLinks: true,
     staleDataWarnings: true,
     trustIndicators: true
