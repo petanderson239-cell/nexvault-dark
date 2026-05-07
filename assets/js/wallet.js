@@ -25,13 +25,13 @@
   };
 
   /* ── EIP-6963 PROVIDER REGISTRY ──────────────────────────────── */
-  const eip6963Providers = new Map(); // rdns → { info, provider }
+  const eip6963Providers = new Map();
 
   window.addEventListener('eip6963:announceProvider', (event) => {
     const { info, provider } = event.detail;
     if (info?.rdns) {
       eip6963Providers.set(info.rdns, { info, provider });
-      const activeTab = document.querySelector('#walletFamilyTabs .active');
+      const activeTab = document.querySelector('.wallet-family-tabs .active');
       if (!activeTab || activeTab.dataset.walletFamily === 'evm') {
         renderWalletGrid('evm');
       }
@@ -107,7 +107,7 @@
 
   function shortAddr(addr) {
     if (!addr) return '';
-    return addr.length > 12 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
+    return addr.length > 12 ? `${addr.slice(0, 6)}\u2026${addr.slice(-4)}` : addr;
   }
 
   /* ── EIP-6963 CONNECT ─────────────────────────────────────────── */
@@ -115,7 +115,7 @@
     const entry = eip6963Providers.get(rdns);
     if (!entry) return connectLegacyInjected(rdns);
 
-    setStatus(`Connecting ${entry.info.name}…`, 'pending');
+    setStatus(`Connecting ${entry.info.name}\u2026`, 'pending');
     Store.mode = 'connecting';
 
     try {
@@ -160,7 +160,7 @@
       return;
     }
 
-    setStatus('Requesting accounts…', 'pending');
+    setStatus('Requesting accounts\u2026', 'pending');
     Store.mode = 'connecting';
 
     try {
@@ -215,7 +215,7 @@
       return;
     }
 
-    setStatus(`Connecting ${walletId}…`, 'pending');
+    setStatus(`Connecting ${walletId}\u2026`, 'pending');
     Store.mode = 'connecting';
 
     try {
@@ -259,7 +259,7 @@
       return;
     }
 
-    setStatus(`Connecting ${walletId}…`, 'pending');
+    setStatus(`Connecting ${walletId}\u2026`, 'pending');
     Store.mode = 'connecting';
 
     try {
@@ -295,12 +295,12 @@
       return;
     }
 
-    setStatus('Launching WalletConnect…', 'pending');
+    setStatus('Launching WalletConnect\u2026', 'pending');
     Store.mode = 'connecting';
 
     try {
       if (!window.__nv_appkit__) {
-        setStatus('Loading AppKit…', 'pending');
+        setStatus('Loading AppKit\u2026', 'pending');
         const [{ createAppKit }, { WagmiAdapter }] = await Promise.all([
           import('https://esm.sh/@reown/appkit@1.6.8'),
           import('https://esm.sh/@reown/appkit-adapter-wagmi@1.6.8')
@@ -383,7 +383,7 @@
     if (walletId === 'tronlink') {
       const tron = window.tronLink || window.tronWeb;
       if (!tron) { toast('TronLink not installed.', 'error'); return; }
-      setStatus('Connecting TronLink…', 'pending');
+      setStatus('Connecting TronLink\u2026', 'pending');
       Store.mode = 'connecting';
       try {
         await tron.request?.({ method: 'tron_requestAccounts' });
@@ -434,7 +434,7 @@
 
     closeWalletModal();
     syncButtonsUI(address);
-    setStatus('Connected ✓', 'success');
+    setStatus('Connected \u2713', 'success');
     toast(`${walletName || 'Wallet'} connected: ${shortAddr(address)}`, 'success');
 
     if (typeof window.hydratePortfolio === 'function') window.hydratePortfolio();
@@ -473,7 +473,7 @@
         btn.title       = 'Click to disconnect wallet';
         btn.classList.add('connected');
       } else {
-        btn.innerHTML   = '<span aria-hidden="true">⬡</span> Connect Wallet';
+        btn.innerHTML   = '<span aria-hidden="true">\u2B21</span> Connect Wallet';
         btn.title       = '';
         btn.classList.remove('connected');
       }
@@ -509,7 +509,7 @@
         ? `<img src="${src}" alt="${w.name}" width="26" height="26" style="border-radius:7px;object-fit:contain;" />`
         : w.id === 'walletconnect'
           ? `<svg width="24" height="24" viewBox="0 0 32 32" fill="none"><path d="M9.58 12.25c3.54-3.47 9.28-3.47 12.82 0l.43.42a.44.44 0 0 1 0 .63l-1.46 1.43a.23.23 0 0 1-.32 0l-.59-.57c-2.47-2.42-6.47-2.42-8.94 0l-.63.62a.23.23 0 0 1-.32 0L9.11 13.3a.44.44 0 0 1 0-.63l.47-.42Zm15.82 2.95 1.3 1.27a.44.44 0 0 1 0 .63l-5.85 5.73a.46.46 0 0 1-.64 0l-4.15-4.07a.12.12 0 0 0-.16 0l-4.15 4.07a.46.46 0 0 1-.64 0L5.28 17.1a.44.44 0 0 1 0-.63l1.3-1.27a.46.46 0 0 1 .64 0l4.15 4.07c.04.04.12.04.16 0l4.15-4.07a.46.46 0 0 1 .64 0l4.15 4.07c.04.04.12.04.16 0l4.15-4.07a.46.46 0 0 1 .64 0Z" fill="#3B99FC"/></svg>`
-          : `<span style="font-size:11px;font-weight:800;color:${w.accent};letter-spacing:-0.5px;">${w.icon || '⬡'}</span>`;
+          : `<span style="font-size:11px;font-weight:800;color:${w.accent};letter-spacing:-0.5px;">${w.icon || '\u2B21'}</span>`;
 
       return `
         <button type="button" class="nv-wallet-btn${isInstalled ? ' installed' : ''}" data-wallet-id="${w.id}" data-wallet-family="${family}" aria-label="Connect with ${w.name}">
@@ -529,12 +529,15 @@
 
   /* ── FAMILY TABS ──────────────────────────────────────────────── */
   function initFamilyTabs() {
-    const tabs = qsa('#walletFamilyTabs [data-wallet-family]');
+    // Support both id="walletFamilyTabs" and class="wallet-family-tabs"
+    const container = byId('walletFamilyTabs') || document.querySelector('.wallet-family-tabs');
+    if (!container) return;
+    const tabs = [...container.querySelectorAll('[data-wallet-family]')];
     tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
-        tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+        tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
         tab.classList.add('active');
-        tab.setAttribute('aria-selected','true');
+        tab.setAttribute('aria-selected', 'true');
         renderWalletGrid(tab.dataset.walletFamily);
       });
     });
@@ -542,17 +545,25 @@
 
   /* ── MODAL ────────────────────────────────────────────────────── */
   function openWalletModal() {
-    const modal = byId('walletModal');
-    if (!modal) return;
-    typeof window.openModal === 'function'
-      ? window.openModal('walletModal')
-      : (modal.classList.add('active'), document.body.style.overflow = 'hidden');
+    // Use main.js openModal if available, otherwise fallback
+    if (typeof window.openModal === 'function') {
+      window.openModal('walletModal');
+    } else {
+      const modal = byId('walletModal');
+      if (modal) {
+        modal.classList.add('open');
+        document.body.classList.add('modal-open');
+      }
+    }
 
-    // Reset to EVM tab
-    const tabs = qsa('#walletFamilyTabs [data-wallet-family]');
-    tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
-    const evmTab = document.querySelector('#walletFamilyTabs [data-wallet-family="evm"]');
-    if (evmTab) { evmTab.classList.add('active'); evmTab.setAttribute('aria-selected','true'); }
+    // Reset to EVM tab — works with both id and class
+    const container = byId('walletFamilyTabs') || document.querySelector('.wallet-family-tabs');
+    if (container) {
+      const tabs = [...container.querySelectorAll('[data-wallet-family]')];
+      tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      const evmTab = container.querySelector('[data-wallet-family="evm"]');
+      if (evmTab) { evmTab.classList.add('active'); evmTab.setAttribute('aria-selected', 'true'); }
+    }
 
     renderWalletGrid('evm');
     initFamilyTabs();
@@ -560,11 +571,17 @@
   }
 
   function closeWalletModal() {
-    const modal = byId('walletModal');
-    if (!modal) return;
-    typeof window.closeModal === 'function'
-      ? window.closeModal('walletModal')
-      : (modal.classList.remove('active'), document.body.style.overflow = '');
+    if (typeof window.closeModal === 'function') {
+      window.closeModal('walletModal');
+    } else {
+      const modal = byId('walletModal');
+      if (modal) {
+        modal.classList.remove('open');
+        modal.classList.remove('active'); // legacy safety
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+      }
+    }
   }
 
   /* ── TRIGGER BUTTONS ──────────────────────────────────────────── */
@@ -687,7 +704,15 @@
   document.addEventListener('DOMContentLoaded', () => {
     injectStyles();
     initTriggers();
-    byId('walletModal')?.addEventListener('click', (e) => { if (e.target === byId('walletModal')) closeWalletModal(); });
+
+    // Backdrop click to close — safe query
+    const modal = byId('walletModal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeWalletModal();
+      });
+    }
+
     tryAutoReconnect();
     // Re-request EIP-6963 — some wallets inject after DOMContentLoaded
     setTimeout(() => window.dispatchEvent(new Event('eip6963:requestProvider')), 100);
