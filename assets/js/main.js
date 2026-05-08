@@ -4,104 +4,55 @@ const AppState = {
   family: null,
   chain: null,
   connected: false,
-  mode: "demo",
+  mode: 'disconnected',
   loading: false,
   lastUpdated: null,
   portfolio: null,
   balances: [],
   transactions: [],
   nfts: [],
-  analytics: null,
   prices: {},
-  health: {
-    pricing: "unknown",
-    portfolio: "unknown"
-  }
+  health: { pricing: 'unknown', portfolio: 'unknown' }
 };
 
 const UI = {
-  qs(selector, root = document) {
-    return root.querySelector(selector);
-  },
-
-  qsa(selector, root = document) {
-    return [...root.querySelectorAll(selector)];
-  },
-
-  byId(id) {
-    return document.getElementById(id);
-  }
+  qs:   (sel, root = document) => root.querySelector(sel),
+  qsa:  (sel, root = document) => [...root.querySelectorAll(sel)],
+  byId: (id) => document.getElementById(id)
 };
 
 const Toast = {
-  root() {
-    return UI.byId("toastContainer");
-  },
-
-  show(message, type = "info", duration = 2800) {
+  root() { return UI.byId('toastContainer'); },
+  show(message, type = 'info', duration = 2800) {
     const root = this.root();
     if (!root) return;
-
-    const toast = document.createElement("div");
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-      <div class="toast-dot"></div>
-      <div class="toast-text">${message}</div>
-    `;
-
-    root.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add("show"));
-
-    setTimeout(() => {
-      toast.classList.remove("show");
-      setTimeout(() => toast.remove(), 280);
-    }, duration);
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.innerHTML = `<div class="toast-dot"></div><div class="toast-text">${message}</div>`;
+    root.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 280); }, duration);
   },
-
-  success(msg) { this.show(msg, "success"); },
-  error(msg) { this.show(msg, "error"); },
-  info(msg) { this.show(msg, "info"); },
-  warn(msg) { this.show(msg, "warn"); }
+  success(m) { this.show(m, 'success'); },
+  error(m)   { this.show(m, 'error'); },
+  info(m)    { this.show(m, 'info'); },
+  warn(m)    { this.show(m, 'warn'); }
 };
 
 const Utils = {
-  shortAddress(addr = "") {
+  shortAddress(addr = '') {
     if (!addr || addr.length < 12) return addr;
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    return `${addr.slice(0, 6)}\u2026${addr.slice(-4)}`;
   },
-
-  formatMoney(value, currency = "USD", digits = 2) {
-    const num = Number(value || 0);
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: digits
-    }).format(num);
+  formatMoney(value, currency = 'USD', digits = 2) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: digits }).format(Number(value || 0));
   },
-
-  formatCompactMoney(value, currency = "USD") {
-    const num = Number(value || 0);
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      notation: "compact",
-      maximumFractionDigits: 2
-    }).format(num);
-  },
-
-  formatNumber(value, digits = 2) {
-    return new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: digits
-    }).format(Number(value || 0));
-  },
-
   formatPercent(value) {
-    const num = Number(value || 0);
-    return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
+    const n = Number(value || 0);
+    return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
   },
-
   timeAgoLabel(date) {
-    if (!date) return "Just now";
+    if (!date) return 'Just now';
     const diff = Math.max(0, Date.now() - new Date(date).getTime());
     const sec = Math.floor(diff / 1000);
     if (sec < 60) return `${sec}s ago`;
@@ -109,456 +60,329 @@ const Utils = {
     if (min < 60) return `${min}m ago`;
     const hr = Math.floor(min / 60);
     if (hr < 24) return `${hr}h ago`;
-    const day = Math.floor(hr / 24);
-    return `${day}d ago`;
+    return `${Math.floor(hr / 24)}d ago`;
   },
-
-  setText(id, value) {
-    const el = UI.byId(id);
-    if (el) el.textContent = value;
-  },
-
-  setHTML(id, value) {
-    const el = UI.byId(id);
-    if (el) el.innerHTML = value;
-  },
-
-  copy(text, label = "Copied") {
+  setText(id, value) { const el = UI.byId(id); if (el) el.textContent = value; },
+  copy(text) {
     if (!text) return;
-    navigator.clipboard.writeText(text)
-      .then(() => Toast.success(label))
-      .catch(() => Toast.error("Copy failed"));
+    navigator.clipboard.writeText(text).then(() => Toast.success('Copied')).catch(() => Toast.error('Copy failed'));
   }
 };
 
 function openModal(id) {
-  const modal = UI.byId(id);
-  if (!modal) return;
-  modal.classList.add("open");
-  document.body.classList.add("modal-open");
+  const m = UI.byId(id);
+  if (!m) return;
+  m.classList.add('open');
+  document.body.classList.add('modal-open');
 }
 
 function closeModal(id) {
-  const modal = UI.byId(id);
-  if (!modal) return;
-  modal.classList.remove("open");
-  document.body.classList.remove("modal-open");
+  const m = UI.byId(id);
+  if (!m) return;
+  m.classList.remove('open');
+  document.body.classList.remove('modal-open');
 }
 
 function toggleSidebar() {
-  const sidebar = UI.byId("sidebar");
-  if (sidebar) sidebar.classList.toggle("open");
+  const s = UI.byId('sidebar');
+  if (s) s.classList.toggle('open');
 }
 
 function initReveal() {
-  const nodes = UI.qsa(".reveal");
+  const nodes = UI.qsa('.reveal');
   if (!nodes.length) return;
-
   const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("revealed");
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
-
-  nodes.forEach((node, i) => {
-    node.style.transitionDelay = `${i * 45}ms`;
-    io.observe(node);
-  });
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('revealed'); io.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  nodes.forEach((n, i) => { n.style.transitionDelay = `${i * 40}ms`; io.observe(n); });
 }
 
 function initTilt() {
-  UI.qsa(".tilt-card").forEach((card) => {
-    card.addEventListener("mousemove", (e) => {
-      const rect = card.getBoundingClientRect();
-      const px = (e.clientX - rect.left) / rect.width;
-      const py = (e.clientY - rect.top) / rect.height;
-      const rx = (0.5 - py) * 8;
-      const ry = (px - 0.5) * 10;
-      card.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-4px)`;
+  UI.qsa('.tilt-card').forEach((card) => {
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      const rx = (0.5 - (e.clientY - r.top) / r.height) * 8;
+      const ry = ((e.clientX - r.left) / r.width - 0.5) * 10;
+      card.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-3px)`;
     });
-
-    card.addEventListener("mouseleave", () => {
-      card.style.transform = "";
-    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
   });
 }
 
-function initParticles(canvasId = "particleCanvas") {
+function initParticles(canvasId = 'particleCanvas') {
   const canvas = UI.byId(canvasId);
   if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   let w = canvas.width = window.innerWidth;
   let h = canvas.height = window.innerHeight;
-
-  const particles = Array.from({ length: 42 }, () => ({
-    x: Math.random() * w,
-    y: Math.random() * h,
-    r: Math.random() * 2 + 0.6,
-    dx: (Math.random() - 0.5) * 0.18,
-    dy: (Math.random() - 0.5) * 0.18
+  const pts = Array.from({ length: 38 }, () => ({
+    x: Math.random() * w, y: Math.random() * h,
+    r: Math.random() * 1.6 + 0.5,
+    dx: (Math.random() - 0.5) * 0.15,
+    dy: (Math.random() - 0.5) * 0.15
   }));
-
   function draw() {
     ctx.clearRect(0, 0, w, h);
-
-    particles.forEach((p) => {
-      p.x += p.dx;
-      p.y += p.dy;
-
+    pts.forEach((p) => {
+      p.x += p.dx; p.y += p.dy;
       if (p.x < 0 || p.x > w) p.dx *= -1;
       if (p.y < 0 || p.y > h) p.dy *= -1;
-
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0, 212, 170, 0.18)";
+      ctx.fillStyle = 'rgba(0,212,170,0.15)';
       ctx.fill();
     });
-
     requestAnimationFrame(draw);
   }
-
-  window.addEventListener("resize", () => {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-  });
-
+  window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
   draw();
 }
 
-function countUp(el, target, prefix = "", suffix = "", duration = 1200) {
-  if (!el) return;
-  const startTime = performance.now();
-
-  function frame(now) {
-    const progress = Math.min((now - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 4);
-    const value = target * eased;
-    el.textContent = `${prefix}${Math.round(value).toLocaleString()}${suffix}`;
-    if (progress < 1) requestAnimationFrame(frame);
-  }
-
-  requestAnimationFrame(frame);
-}
-
-function initCounters() {
-  UI.qsa("[data-count]").forEach((el) => {
-    const target = Number(el.dataset.count || 0);
-    const prefix = el.dataset.prefix || "";
-    const suffix = el.dataset.suffix || "";
-    countUp(el, target, prefix, suffix);
+/* ─── KPI SKELETON — shown when no wallet connected ─────────────── */
+function renderKpiSkeleton() {
+  ['kpiPortfolio', 'kpiPnl', 'kpiPnl24h', 'kpiTokens'].forEach((id) => {
+    const el = UI.byId(id);
+    if (el) {
+      el.textContent = '—';
+      el.classList.add('kpi-empty');
+    }
   });
+  ['portfolioChange24h', 'kpiWallets', 'kpiNfts', 'chartPerformanceValue', 'chartPerformanceChange'].forEach((id) => {
+    const el = UI.byId(id);
+    if (el) el.textContent = '—';
+  });
+  const perf = UI.byId('chartPerformanceValue');
+  if (perf) perf.textContent = 'Connect wallet to view';
 }
 
-function setLoadingState(active) {
-  AppState.loading = active;
-  document.body.classList.toggle("app-loading", active);
-}
+/* ─── WALLET-GATE EMPTY STATE ───────────────────────────────────── */
+function renderDisconnectedState() {
+  renderKpiSkeleton();
 
-function renderTrustIndicators() {
-  const cfg = window.NEXVAULT_CONFIG;
-  if (!cfg?.trust) return;
-
-  const trustBar = UI.byId("trustBar");
-  if (!trustBar) return;
-
-  trustBar.innerHTML = `
-    <div class="trust-pill-group">
-      ${(cfg.trust.badges || []).map((badge) => `<span class="trust-pill">${badge}</span>`).join("")}
-    </div>
-    <p class="trust-copy">${cfg.trust.readOnlyCopy}</p>
-  `;
-}
-
-function renderLastUpdated() {
-  const el = UI.byId("lastUpdated");
-  if (!el) return;
-
-  if (!AppState.lastUpdated) {
-    el.textContent = "Updated just now";
-    return;
+  // Holdings table empty state
+  const tbody = UI.byId('holdingsTableBody');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr><td colspan="5">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <polygon points="20,4 36,13 36,27 20,36 4,27 4,13" stroke="rgba(0,212,170,0.4)" stroke-width="1.5" fill="none"/>
+              <circle cx="20" cy="20" r="5" stroke="rgba(0,212,170,0.6)" stroke-width="1.5" fill="none"/>
+            </svg>
+          </div>
+          <p class="empty-state-title">No wallet connected</p>
+          <p class="empty-state-sub">Connect your wallet to view live token balances across all chains.</p>
+          <button type="button" class="btn btn-primary" style="margin-top:8px;height:40px;padding:0 24px;border-radius:14px;font-size:14px;" data-wallet-trigger>Connect Wallet</button>
+        </div>
+      </td></tr>`;
   }
 
-  el.textContent = `Updated ${Utils.timeAgoLabel(AppState.lastUpdated)}`;
-}
-
-function updateWalletUI() {
-  const walletIndicator = UI.byId("walletIndicator");
-  const topbarWallet = UI.byId("topbarWallet");
-  const walletAddress = UI.byId("walletAddressLabel");
-  const walletFamily = UI.byId("walletFamilyLabel");
-  const triggers = UI.qsa("[data-wallet-trigger]");
-
-  if (AppState.connected && AppState.address) {
-    const short = Utils.shortAddress(AppState.address);
-
-    if (walletIndicator) {
-      walletIndicator.textContent = `${AppState.wallet} • ${short}`;
-      walletIndicator.classList.add("connected");
-    }
-
-    if (topbarWallet) {
-      topbarWallet.innerHTML = `
-        <span class="wallet-pill-dot"></span>
-        <span>${short}</span>
-      `;
-      topbarWallet.classList.add("connected");
-    }
-
-    if (walletAddress) walletAddress.textContent = AppState.address;
-    if (walletFamily) walletFamily.textContent = AppState.family || "Universal";
-
-    triggers.forEach((btn) => {
-      btn.textContent = short;
-    });
-  } else {
-    if (walletIndicator) {
-      walletIndicator.textContent = "No Wallet";
-      walletIndicator.classList.remove("connected");
-    }
-
-    if (topbarWallet) {
-      topbarWallet.innerHTML = `<span>Connect Wallet</span>`;
-      topbarWallet.classList.remove("connected");
-    }
-
-    if (walletAddress) walletAddress.textContent = "Not connected";
-    if (walletFamily) walletFamily.textContent = "Select wallet family";
-
-    triggers.forEach((btn) => {
-      btn.textContent = "Connect Wallet";
-    });
+  // Market snapshot grid — still loads live prices (no wallet needed)
+  const el = UI.byId('sourceStatus');
+  if (el) {
+    el.innerHTML = `
+      <span class="status-dot is-offline" style="width:7px;height:7px;"></span>
+      <span>No wallet connected</span>`;
   }
 }
 
-async function fetchJSON(url, options = {}) {
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status}`);
+/* ─── APPLY REAL PORTFOLIO DATA ─────────────────────────────────── */
+function applyPortfolioToKpis(portfolio) {
+  if (!portfolio) return;
+  ['kpiPortfolio', 'kpiTotalValue', 'portfolioValuePrimary'].forEach((id) => {
+    const el = UI.byId(id);
+    if (el) { el.textContent = Utils.formatMoney(portfolio.totalValue); el.classList.remove('kpi-empty'); }
+  });
+  ['kpiPnl24h', 'portfolioChange24h'].forEach((id) => {
+    const el = UI.byId(id);
+    if (el) {
+      el.textContent = Utils.formatPercent(portfolio.pnl24h);
+      el.classList.remove('kpi-empty');
+      el.classList.toggle('positive', Number(portfolio.pnl24h) >= 0);
+      el.classList.toggle('negative', Number(portfolio.pnl24h) < 0);
+    }
+  });
+  if (portfolio.totalPnl != null) {
+    const el = UI.byId('kpiPnl');
+    if (el) { el.textContent = Utils.formatMoney(portfolio.totalPnl); el.classList.remove('kpi-empty'); }
   }
+  if (portfolio.walletCount != null) Utils.setText('kpiWallets', String(portfolio.walletCount));
+  if (portfolio.tokenCount  != null) { const el = UI.byId('kpiTokens'); if (el) { el.textContent = String(portfolio.tokenCount); el.classList.remove('kpi-empty'); } }
+  if (portfolio.nftCount    != null) Utils.setText('kpiNfts', String(portfolio.nftCount));
+}
+
+/* ─── DATA FETCHERS ─────────────────────────────────────────────── */
+async function fetchJSON(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
-}
-
-async function fetchHealth() {
-  const cfg = window.NEXVAULT_CONFIG;
-  if (!cfg?.providers?.data?.endpoints?.health) return null;
-
-  try {
-    const data = await fetchJSON(cfg.providers.data.endpoints.health);
-    AppState.health.portfolio = data?.status || "online";
-    return data;
-  } catch (err) {
-    AppState.health.portfolio = "degraded";
-    return null;
-  }
 }
 
 async function fetchPublicPrices(ids = []) {
   const cfg = window.NEXVAULT_CONFIG;
   if (!cfg?.providers?.pricing?.publicBase || !ids.length) return {};
-
   const url = new URL(`${cfg.providers.pricing.publicBase}${cfg.providers.pricing.endpoints.simplePrice}`);
-  url.searchParams.set("ids", ids.join(","));
-  url.searchParams.set("vs_currencies", cfg.app.defaultCurrency);
-  url.searchParams.set("include_24hr_change", "true");
-  url.searchParams.set("include_last_updated_at", "true");
-
+  url.searchParams.set('ids', ids.join(','));
+  url.searchParams.set('vs_currencies', 'usd');
+  url.searchParams.set('include_24hr_change', 'true');
   try {
     const data = await fetchJSON(url.toString());
-    AppState.health.pricing = "online";
+    AppState.health.pricing = 'online';
     AppState.prices = data || {};
     return data || {};
-  } catch (err) {
-    AppState.health.pricing = "degraded";
+  } catch {
+    AppState.health.pricing = 'degraded';
     return {};
   }
 }
 
-async function fetchPortfolioFromBackend(address, family) {
-  const cfg = window.NEXVAULT_CONFIG;
-  const endpoint = cfg?.providers?.data?.endpoints?.portfolio;
-  if (!endpoint || !address) return null;
-
-  const url = new URL(endpoint, window.location.origin);
-  url.searchParams.set("address", address);
-  if (family) url.searchParams.set("family", family);
-
-  try {
-    return await fetchJSON(url.toString());
-  } catch (err) {
-    return null;
-  }
+async function fetchPortfolio(address, family) {
+  const ep = window.NEXVAULT_CONFIG?.providers?.data?.endpoints?.portfolio;
+  if (!ep || !address) return null;
+  const url = new URL(ep, window.location.origin);
+  url.searchParams.set('address', address);
+  if (family) url.searchParams.set('family', family);
+  try { return await fetchJSON(url.toString()); } catch { return null; }
 }
 
-async function fetchBalancesFromBackend(address, family) {
-  const cfg = window.NEXVAULT_CONFIG;
-  const endpoint = cfg?.providers?.data?.endpoints?.balances;
-  if (!endpoint || !address) return [];
-
-  const url = new URL(endpoint, window.location.origin);
-  url.searchParams.set("address", address);
-  if (family) url.searchParams.set("family", family);
-
-  try {
-    return await fetchJSON(url.toString());
-  } catch (err) {
-    return [];
-  }
+async function fetchBalances(address, family) {
+  const ep = window.NEXVAULT_CONFIG?.providers?.data?.endpoints?.balances;
+  if (!ep || !address) return [];
+  const url = new URL(ep, window.location.origin);
+  url.searchParams.set('address', address);
+  if (family) url.searchParams.set('family', family);
+  try { return await fetchJSON(url.toString()); } catch { return []; }
 }
 
-async function fetchTransactionsFromBackend(address, family) {
-  const cfg = window.NEXVAULT_CONFIG;
-  const endpoint = cfg?.providers?.data?.endpoints?.transactions;
-  if (!endpoint || !address) return [];
-
-  const url = new URL(endpoint, window.location.origin);
-  url.searchParams.set("address", address);
-  if (family) url.searchParams.set("family", family);
-
-  try {
-    return await fetchJSON(url.toString());
-  } catch (err) {
-    return [];
-  }
+async function fetchTransactions(address, family) {
+  const ep = window.NEXVAULT_CONFIG?.providers?.data?.endpoints?.transactions;
+  if (!ep || !address) return [];
+  const url = new URL(ep, window.location.origin);
+  url.searchParams.set('address', address);
+  if (family) url.searchParams.set('family', family);
+  try { return await fetchJSON(url.toString()); } catch { return []; }
 }
 
-async function fetchNFTsFromBackend(address, family) {
-  const cfg = window.NEXVAULT_CONFIG;
-  const endpoint = cfg?.providers?.data?.endpoints?.nfts;
-  if (!endpoint || !address) return [];
-
-  const url = new URL(endpoint, window.location.origin);
-  url.searchParams.set("address", address);
-  if (family) url.searchParams.set("family", family);
-
-  try {
-    return await fetchJSON(url.toString());
-  } catch (err) {
-    return [];
-  }
+async function fetchNFTs(address, family) {
+  const ep = window.NEXVAULT_CONFIG?.providers?.data?.endpoints?.nfts;
+  if (!ep || !address) return [];
+  const url = new URL(ep, window.location.origin);
+  url.searchParams.set('address', address);
+  if (family) url.searchParams.set('family', family);
+  try { return await fetchJSON(url.toString()); } catch { return []; }
 }
 
+/* ─── SOURCE STATUS ─────────────────────────────────────────────── */
 function renderSourceStatus() {
-  const el = UI.byId("sourceStatus");
+  const el = UI.byId('sourceStatus');
   if (!el) return;
-
-  const pricing = AppState.health.pricing === "online" ? "Live pricing" : "Price fallback";
-  const portfolio = AppState.health.portfolio === "online" ? "Indexed wallet data" : "Demo-safe mode";
-
+  if (!AppState.connected) {
+    el.innerHTML = `<span class="status-dot is-offline" style="width:7px;height:7px;"></span><span>No wallet connected</span>`;
+    return;
+  }
+  const pricingOnline = AppState.health.pricing === 'online';
   el.innerHTML = `
-    <span class="status-dot ${AppState.health.pricing === "online" ? "is-online" : "is-warn"}"></span>
-    <span>${pricing}</span>
-    <span class="status-sep">•</span>
-    <span>${portfolio}</span>
-  `;
+    <span class="status-dot ${pricingOnline ? 'is-online' : 'is-warn'}" style="width:7px;height:7px;"></span>
+    <span>${pricingOnline ? 'Live pricing' : 'Price data unavailable'}</span>
+    <span class="status-sep" style="margin:0 6px;opacity:0.3;">·</span>
+    <span>${AppState.health.portfolio === 'online' ? 'Indexed' : 'Backend unavailable'}</span>`;
 }
 
-function applyPortfolioToKpis(portfolio) {
-  if (!portfolio) return;
-
-  if (portfolio.totalValue != null) {
-    ["kpiPortfolio", "kpiTotalValue", "portfolioValuePrimary"].forEach((id) => {
-      const el = UI.byId(id);
-      if (el) el.textContent = Utils.formatMoney(portfolio.totalValue);
-    });
-  }
-
-  if (portfolio.pnl24h != null) {
-    ["kpiPnl24h", "portfolioChange24h"].forEach((id) => {
-      const el = UI.byId(id);
-      if (el) {
-        el.textContent = Utils.formatPercent(portfolio.pnl24h);
-        el.classList.toggle("positive", Number(portfolio.pnl24h) >= 0);
-        el.classList.toggle("negative", Number(portfolio.pnl24h) < 0);
-      }
-    });
-  }
-
-  if (portfolio.totalPnl != null) {
-    const el = UI.byId("kpiPnl");
-    if (el) el.textContent = Utils.formatMoney(portfolio.totalPnl);
-  }
-
-  if (portfolio.walletCount != null) {
-    Utils.setText("kpiWallets", String(portfolio.walletCount));
-  }
-
-  if (portfolio.tokenCount != null) {
-    Utils.setText("kpiTokens", String(portfolio.tokenCount));
-  }
-
-  if (portfolio.nftCount != null) {
-    Utils.setText("kpiNfts", String(portfolio.nftCount));
-  }
+function renderLastUpdated() {
+  const el = UI.byId('lastUpdated');
+  if (!el) return;
+  el.textContent = AppState.lastUpdated ? `Updated ${Utils.timeAgoLabel(AppState.lastUpdated)}` : '';
 }
 
-function buildDemoPortfolio() {
+function renderTrustIndicators() {
   const cfg = window.NEXVAULT_CONFIG;
-  const p = cfg?.demo ? {
-    totalValue: 284719.4,
-    pnl24h: 4.82,
-    totalPnl: 94220.18,
-    walletCount: 3,
-    tokenCount: 12,
-    nftCount: 9
-  } : null;
-
-  return p;
+  const el  = UI.byId('trustBar');
+  if (!el || !cfg?.trust) return;
+  el.innerHTML = `
+    <div class="trust-pill-group">${(cfg.trust.badges || []).map(b => `<span class="trust-pill">${b}</span>`).join('')}</div>
+    <p class="trust-copy">${cfg.trust.readOnlyCopy}</p>`;
 }
 
+/* ─── UPDATE WALLET UI ──────────────────────────────────────────── */
+function updateWalletUI() {
+  const indicator = UI.byId('walletIndicator');
+  const topbar    = UI.byId('topbarWallet');
+  const addrEl    = UI.byId('walletAddressLabel');
+  const familyEl  = UI.byId('walletFamilyLabel');
+
+  if (AppState.connected && AppState.address) {
+    const short = Utils.shortAddress(AppState.address);
+    if (indicator) { indicator.textContent = `${AppState.wallet} · ${short}`; indicator.classList.add('connected'); }
+    if (topbar)    { topbar.innerHTML = `<span class="wallet-pill-dot"></span><span>${short}</span>`; topbar.classList.add('connected'); }
+    if (addrEl)    addrEl.textContent = AppState.address;
+    if (familyEl)  familyEl.textContent = AppState.wallet || 'Connected';
+    UI.qsa('[data-wallet-trigger]').forEach(b => { b.textContent = short; });
+  } else {
+    if (indicator) { indicator.textContent = 'Not connected'; indicator.classList.remove('connected'); }
+    if (topbar)    { topbar.innerHTML = `<span>Connect Wallet</span>`; topbar.classList.remove('connected'); }
+    if (addrEl)    addrEl.textContent = 'Not connected';
+    if (familyEl)  familyEl.textContent = 'Connect Wallet';
+    UI.qsa('[data-wallet-trigger]').forEach(b => { b.innerHTML = '<span aria-hidden="true">&#x2B21;</span> Connect Wallet'; });
+  }
+}
+
+/* ─── MAIN HYDRATION ────────────────────────────────────────────── */
 async function hydratePortfolio() {
   const cfg = window.NEXVAULT_CONFIG;
   if (!cfg) return;
 
-  setLoadingState(true);
+  document.body.classList.add('app-loading');
+  AppState.loading = true;
 
   try {
-    await fetchHealth();
+    // Always fetch live market prices — no wallet needed
+    const ids = Object.values(cfg.supportedAssets?.coingeckoIds || {});
+    await fetchPublicPrices(ids);
 
-    const trackedIds = Object.values(cfg.supportedAssets?.coingeckoIds || {});
-    await fetchPublicPrices(trackedIds);
+    // Portfolio data ONLY when wallet is connected
+    if (AppState.connected && AppState.address) {
+      const [portfolio, balances, transactions, nfts] = await Promise.all([
+        fetchPortfolio(AppState.address, AppState.family),
+        fetchBalances(AppState.address, AppState.family),
+        fetchTransactions(AppState.address, AppState.family),
+        fetchNFTs(AppState.address, AppState.family)
+      ]);
 
-    if (AppState.connected && AppState.address && cfg.features.realPortfolio) {
-      const portfolio = await fetchPortfolioFromBackend(AppState.address, AppState.family);
-      const balances = await fetchBalancesFromBackend(AppState.address, AppState.family);
-      const transactions = await fetchTransactionsFromBackend(AppState.address, AppState.family);
-      const nfts = await fetchNFTsFromBackend(AppState.address, AppState.family);
+      AppState.portfolio     = portfolio;
+      AppState.balances      = Array.isArray(balances)      ? balances      : [];
+      AppState.transactions  = Array.isArray(transactions)  ? transactions  : [];
+      AppState.nfts          = Array.isArray(nfts)          ? nfts          : [];
+      AppState.mode          = portfolio ? 'live' : 'read-only';
+      AppState.health.portfolio = portfolio ? 'online' : 'unavailable';
 
-      AppState.portfolio = portfolio || buildDemoPortfolio();
-      AppState.balances = Array.isArray(balances) ? balances : [];
-      AppState.transactions = Array.isArray(transactions) ? transactions : [];
-      AppState.nfts = Array.isArray(nfts) ? nfts : [];
-      AppState.mode = portfolio ? "live" : "demo";
+      applyPortfolioToKpis(AppState.portfolio);
+      document.dispatchEvent(new CustomEvent('nexvault:portfolio-updated', { detail: AppState }));
     } else {
-      AppState.portfolio = buildDemoPortfolio();
-      AppState.mode = "demo";
+      // No wallet — clear all portfolio state, show empty UI
+      AppState.portfolio    = null;
+      AppState.balances     = [];
+      AppState.transactions = [];
+      AppState.nfts         = [];
+      AppState.mode         = 'disconnected';
+      renderDisconnectedState();
     }
 
-    applyPortfolioToKpis(AppState.portfolio);
     AppState.lastUpdated = new Date().toISOString();
     renderLastUpdated();
     renderSourceStatus();
+    document.dispatchEvent(new CustomEvent('nexvault:prices-updated', { detail: AppState.prices }));
   } catch (err) {
-    AppState.portfolio = buildDemoPortfolio();
-    AppState.mode = "demo";
-    applyPortfolioToKpis(AppState.portfolio);
-    AppState.lastUpdated = new Date().toISOString();
-    renderLastUpdated();
-    renderSourceStatus();
+    console.error('[NexVault] hydratePortfolio error:', err);
   } finally {
-    setLoadingState(false);
+    AppState.loading = false;
+    document.body.classList.remove('app-loading');
   }
 }
 
 function startRefreshLoop() {
-  const cfg = window.NEXVAULT_CONFIG;
-  if (!cfg?.app?.refreshMs) return;
-  setInterval(() => {
-    hydratePortfolio();
-  }, cfg.app.refreshMs);
+  const ms = window.NEXVAULT_CONFIG?.app?.refreshMs;
+  if (ms) setInterval(hydratePortfolio, ms);
 }
 
 function initAppShell() {
@@ -566,20 +390,30 @@ function initAppShell() {
   renderLastUpdated();
   renderSourceStatus();
   updateWalletUI();
+  renderDisconnectedState(); // default state before hydration
 }
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    UI.qsa(".modal-overlay.open").forEach((modal) => modal.classList.remove("open"));
-    document.body.classList.remove("modal-open");
+// Expose globals for wallet.js and inline scripts
+window.AppState    = AppState;
+window.Utils       = Utils;
+window.Toast       = Toast;
+window.UI          = UI;
+window.openModal   = openModal;
+window.closeModal  = closeModal;
+window.updateWalletUI  = updateWalletUI;
+window.hydratePortfolio = hydratePortfolio;
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    UI.qsa('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    document.body.classList.remove('modal-open');
   }
 });
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initParticles();
   initReveal();
   initTilt();
-  initCounters();
   initAppShell();
   await hydratePortfolio();
   startRefreshLoop();
